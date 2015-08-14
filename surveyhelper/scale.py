@@ -122,3 +122,8 @@ class LikertScale(OrdinalScale):
         else:
             return(False)
 
+    def exclude_choices_from_analysis(self, choices):
+        super().exclude_choices_from_analysis(choices)
+        ct = len(self.exclude_from_analysis) - sum(self.exclude_from_analysis)
+        self.midpoint = ct/2
+
