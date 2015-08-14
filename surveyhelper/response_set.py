@@ -3,8 +3,11 @@ import numpy as np
 
 class ResponseSet:
 
-    
-    def __init__(self, response_file, codebook, skiprows = [1], encoding="utf8"):
+    # TODO - As currently written this code skips the second row of data,
+    # because that's what we want to do for Qualtrics csv results, but this is
+    # potentially a big gotcha, so document well or change.
+    def __init__(self, response_file, codebook, skiprows = [1], encoding="utf8",
+                 grouping_var=None):
         df = pd.read_csv(response_file , skiprows=skiprows, encoding=encoding)
         # go through each variable in the codebook and make sure the corresponding 
         # column is integer coded
@@ -22,8 +25,17 @@ class ResponseSet:
         self.data = df
         self.matched_questions = matched_questions
         self.codebook = codebook
+        self.grouping_var = grouping_var
 
-    def get_grouped_data(self, grouping_question):
-        groups = self.data.groupby(grouping_question.tag)
+
+    def get_data(self):
+        if not self.grouping_var:
+            group_var = 'z'
+            while group_var in self.data.columns:
+                group_var += 'z'
+            self.data[group_var] = 0
+        else:
+            group_var = self.grouping_var
+        groups = self.data.groupby(group_var)
         return(groups)
         
