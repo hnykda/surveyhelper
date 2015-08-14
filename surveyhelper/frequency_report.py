@@ -38,7 +38,6 @@ class FrequencyReport:
                             q.text,
                             q.freq_table_to_json(self.response_set.data),
                             [q.freq_table_to_json(self.response_set.data)],
-                            q.questions_to_json(),
                             ['all'],
                             q.graph_type(),
                             midpoint

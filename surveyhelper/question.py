@@ -82,9 +82,6 @@ class MatrixQuestion:
     def freq_table_to_json(self, df):
         return('')
 
-    def questions_to_json(self):
-        return('')
-
 class SelectOneMatrixQuestion(MatrixQuestion):
 
     def get_choices(self, remove_exclusions=True, show_values=False):
@@ -163,11 +160,8 @@ class SelectOneMatrixQuestion(MatrixQuestion):
 
     def freq_table_to_json(self, df):
         t = self.frequency_table(df, "ct", "", True, False, False, "")
-        return(t.iloc[:, 1:].to_json(orient="records"))
-
-    def questions_to_json(self):
-        df = pd.DataFrame({"Question": self.get_children_text()})
-        return(df.to_json(orient="records"))
+        t.set_index('Question', inplace=True)
+        return(t.to_json(orient="split"))
 
     def graph_type(self):
         if len(self.questions) > 0:
@@ -361,7 +355,9 @@ class SelectOneQuestion(SelectQuestion):
     def cut_by_question(self, other_question, response_set, 
                         cut_var_label=None, question_label=None,
                         pct_format=".0%", remove_exclusions=True, 
-                        show_mean=True, mean_format=".1f"):
+                        show_mean=True, mean_format=".1f", 
+                        col_multi_index=False, row_multi_index=False,
+                        show_values=False):
         if type(other_question) != SelectOneQuestion:
             raise(Exception("Can only call cut_by_question on a SelectOneQuestion type"))
         df = response_set.data.copy()
@@ -381,16 +377,19 @@ class SelectOneQuestion(SelectQuestion):
         if not oth_text:
             oth_text = other_question.text
         return(self.cut_by(groups, group_mapping, oth_text, question_label,
-               pct_format, remove_exclusions, show_mean, mean_format))
+               pct_format, remove_exclusions, show_mean, mean_format,
+               col_multi_index, row_multi_index, show_values))
 
     def cut_by(self, groups, group_label_mapping, cut_var_label, 
                question_label=None, pct_format=".0%",
-               remove_exclusions=True, show_mean=True, mean_format=".1f"):
-
+               remove_exclusions=True, show_mean=True, mean_format=".1f",
+               col_multi_index=False, row_multi_index=False,
+               show_values=False):
         freqs = []
         for k, gp in groups:
             t = (self.frequency_table(gp, True, False, True, pct_format,
-                 remove_exclusions, False, show_mean, mean_format))
+                 remove_exclusions, False, show_mean, mean_format, 
+                 show_values))
             t.set_index("Answer", inplace=True)
             series = t.ix[:,0]
             series.name = group_label_mapping[k]
@@ -407,16 +406,19 @@ class SelectOneQuestion(SelectQuestion):
             my_label = self.text
 
         # Add hierarchical index to rows
-        top_index = [cut_var_label]*len(groups)
-        df.index = pd.MultiIndex.from_arrays([top_index, 
-                   df.index.tolist()])
+        if row_multi_index:
+            top_index = [cut_var_label]*len(groups)
+            df.index = pd.MultiIndex.from_arrays([top_index, 
+                       df.index.tolist()])
 
         # Add hierarchical index to columns
-        col_top_index = [my_label]*len(self.scale.get_choices(remove_exclusions))
-        if show_mean:
-            col_top_index += [my_label]
-        df.columns = pd.MultiIndex.from_arrays([col_top_index, 
-                     df.columns.tolist()])
+        if col_multi_index:
+            col_top_index = [my_label]*len(self.scale.get_choices(remove_exclusions))
+
+            if show_mean:
+                col_top_index += [my_label]
+            df.columns = pd.MultiIndex.from_arrays([col_top_index, 
+                         df.columns.tolist()])
 
         return(df)
 
@@ -436,7 +438,7 @@ class SelectOneQuestion(SelectQuestion):
         t = self.frequency_table(df, True, True, True, ".9f", True, False, 
                                  False, ".1f", False)
         t.columns = ["category", "count", "pct"]
-        return(t.to_json(orient="records"))
+        return(t.to_json(orient="split"))
 
     def graph_type(self):
         return('horizontal_bar')
@@ -563,7 +565,6 @@ class SelectMultipleQuestion(SelectQuestion):
     def cut_by(self, groups, group_label_mapping, cut_var_label, 
                question_label=None, pct_format=".0%",
                remove_exclusions=True):
-
         freqs = []
         for k, gp in groups:
             t = (self.frequency_table(gp, True, False, True, False, 

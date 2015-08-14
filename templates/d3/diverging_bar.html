@@ -2,14 +2,14 @@
 
 <script>
 
-var data = JSON.parse(document.getElementById('data{{index}}_group{{group}}').innerHTML);
-var categories = Object.keys(data[0]);
+var json = JSON.parse(document.getElementById('data{{index}}_group{{group}}').innerHTML);
+var categories = json['columns'];
 var numcat = categories.length;
 
-var q = JSON.parse(document.getElementById('questions{{index}}').innerHTML);
-var questions = [];
-q.forEach(function(qs) {questions.push(qs.Question);} );
+var questions = json['index'];
 var qct = questions.length;
+
+var data = json['data'];
 
 var max_label = d3.max(questions.map(function(q) {return((q.length*5)+20)}));
 var margin_left = Math.min(max_label, 300);
@@ -68,15 +68,16 @@ color.domain(categories);
 var counter = 0;
 data.forEach(function(d) {
   // calc percentages
-  var tot = 0;
-  categories.forEach(function(c) { tot += d[c]; });
-  categories.forEach(function(c) {
-      d[c + "_N"] = d[c];
-      d[c + "_pct"] = (d[c]/tot) * 100;
-      d[c] = (d[c]/tot) * 100;
+  var tot = d.reduce(function(i, j, index, array) {
+    return i + j;
   });
 
-  //Assume middle of scale is neutral
+  categories.forEach(function(c, i) {
+      d[c + "_N"] = d[i];
+      d[c + "_pct"] = (d[i]/tot) * 100;
+      d[c] = (d[i]/tot) * 100;
+  });
+
   // x0 = left offset of box relative to 0
   // x1 = right offset of box relative to 0
   // N = total for this question
