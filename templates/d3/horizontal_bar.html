@@ -1,15 +1,17 @@
 <svg class="chart{{index}}_group{{group}}"></svg>
 
 <script>
-var data = JSON.parse(document.getElementById('data{{index}}_group{{group}}').innerHTML);
+var json = JSON.parse(document.getElementById('data{{index}}_group{{group}}').innerHTML);
+var num_data = json['data'];
+var labels = json['index'];
 var x = d3.scale.linear();   
 var y = d3.scale.ordinal();
 
-x.domain([0, d3.max(data, function(d) { return d.count; })]);
-y.domain(data.map(function(d) { return d.category; }));
+x.domain([0, d3.max(num_data.map(function(d) { return d[0]; }))]);
+y.domain(labels);
 
 
-var label_lengths = data.map(function(d) {return (d.category.length * 5) + 20});
+var label_lengths = labels.map(function(d) {return (d.length * 5) + 20});
 var max_label = d3.max(label_lengths);
 var margin_left = Math.min(max_label, 300);
 
@@ -23,6 +25,12 @@ var margin = {top: 0, right: 15, bottom: 30, left: margin_left},
     height = total_height - margin.top - margin.bottom;
 x.range([0, width]);
 y.rangeRoundBands([0, height], .25);
+
+num_data.forEach(function(n, i) {
+    n["count"] = n[0];
+    n["pct"] = n[1];
+    n["label"] = labels[i];
+});
 
 
 var xAxis = d3.svg.axis()
@@ -38,7 +46,7 @@ var tip = d3.tip()
   .offset([0, 10])
   .direction('e')
   .html(function(d) {
-    return d.category + " (n = " + d.count + ")";
+    return d.label + " (n = " + d.count + ")";
   })
 
 var chart = d3.select(".chart{{index}}_group{{group}}")
@@ -70,16 +78,18 @@ chart.append("g")
     .call(xAxis);
 
 var bar = chart.selectAll(".hbar")
-    .data(data)
+    .data(num_data)
   .enter()
     .append("g")
     .attr("class", "hbar")
     .attr("transform", function(d, i) { 
-        return "translate(0," + y(d.category) + ")"; 
+        return "translate(0," + y(d.label) + ")"; 
     });
 
 bar.append("rect")
-    .attr("width", function(d) { return x(d.count); })
+    .attr("width", function(d) {
+        return x(d.count);
+    })
     .attr("height", y.rangeBand())
     .on('mouseover', tip.show)
     .on('mouseout', tip.hide);

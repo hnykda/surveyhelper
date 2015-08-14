@@ -438,6 +438,7 @@ class SelectOneQuestion(SelectQuestion):
         t = self.frequency_table(df, True, True, True, ".9f", True, False, 
                                  False, ".1f", False)
         t.columns = ["category", "count", "pct"]
+        t.set_index('category', inplace=True)
         return(t.to_json(orient="split"))
 
     def graph_type(self):
@@ -621,7 +622,9 @@ class SelectMultipleQuestion(SelectQuestion):
     def freq_table_to_json(self, df):
         t = self.frequency_table(df, True, True, True, False, ".9f", True, False)
         t.columns = ["category", "count", "pct"]
-        return(t.to_json(orient="records"))
+        t.set_index('category', inplace=True)
+        return(t.to_json(orient="split"))
+
 
     def graph_type(self):
         return('horizontal_bar')
