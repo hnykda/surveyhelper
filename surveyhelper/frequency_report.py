@@ -22,14 +22,6 @@ class FrequencyReport:
         self.report_title = cfg['report_data']['title']
         self.response_set = response_set
 
-    @staticmethod
-    def remove_empty_rows(json_txt):
-        j = json.loads(json_txt)
-        keep = [sum(d)!=0 for d in j['data']]
-        j['index'] = list(compress(j['index'], keep))
-        j['data'] = list(compress(j['data'], keep))
-        return(json.dumps(j), len(j['index']))
-
     def create_report(self, report_title="Placeholder Title"):
         env = Environment(loader=FileSystemLoader(self.template_dir),
                   extensions=['jinja2.ext.with_'])
@@ -50,15 +42,13 @@ class FrequencyReport:
             group_names = []
             if isinstance(q, SelectQuestion) and len(data_groups) > 1:
                 table = q.cut_by_json(self.response_set)
-                j, l = FrequencyReport.remove_empty_rows(q.cut_by_json(self.response_set))
-                if l > 0:
-                    freq_tables.append(j)
-                    freq_table_json.append(j)
-                    group_names.append('')
+                freq_tables.append(table)
+                freq_table_json.append(table)
+                group_names.append('')
             else:
                 for i, (name, data) in enumerate(data_groups):
-                    j, l = FrequencyReport.remove_empty_rows(q.freq_table_to_json(data))
-                    if l > 0:
+                    j = q.freq_table_to_json(data)
+                    if j != '':
                         freq_tables.append(j)
                         freq_table_json.append(j)
                         group_names.append(name)
