@@ -163,7 +163,7 @@ class SelectOneMatrixQuestion(MatrixQuestion):
         t.set_index('Question', inplace=True)
         return(t.to_json(orient="split"))
 
-    def graph_type(self):
+    def graph_type(self, num_groups=1):
         if len(self.questions) > 0:
             if type(self.questions[0].scale) == LikertScale:
                 return('diverging_bar')
@@ -352,11 +352,17 @@ class SelectOneQuestion(SelectQuestion):
             tbl.loc[len(tbl)] = mean
         return(tbl)
 
+    def cut_by_json(self, response_set):
+        q2 = response_set.codebook.questions[response_set.grouping_var]
+        t = self.cut_by_question(q2, response_set, None, None, ".0%", True, 
+                                 False, False, False)
+        return(t.to_json(orient="split"))
+
     def cut_by_question(self, other_question, response_set, 
                         cut_var_label=None, question_label=None,
-                        pct_format=".0%", remove_exclusions=True, 
-                        show_mean=True, mean_format=".1f", 
+                        pct_format=".0%", remove_exclusions=True,
                         col_multi_index=False, row_multi_index=False,
+                        show_mean=True, mean_format=".1f", 
                         show_values=False):
         if type(other_question) != SelectOneQuestion:
             raise(Exception("Can only call cut_by_question on a SelectOneQuestion type"))
@@ -377,17 +383,17 @@ class SelectOneQuestion(SelectQuestion):
         if not oth_text:
             oth_text = other_question.text
         return(self.cut_by(groups, group_mapping, oth_text, question_label,
-               pct_format, remove_exclusions, show_mean, mean_format,
-               col_multi_index, row_multi_index, show_values))
+               pct_format, remove_exclusions, col_multi_index, row_multi_index, 
+               show_mean, mean_format, show_values))
 
     def cut_by(self, groups, group_label_mapping, cut_var_label, 
                question_label=None, pct_format=".0%",
-               remove_exclusions=True, show_mean=True, mean_format=".1f",
-               col_multi_index=False, row_multi_index=False,
+               remove_exclusions=True, col_multi_index=False, 
+               row_multi_index=False, show_mean=True, mean_format=".1f",
                show_values=False):
         freqs = []
         for k, gp in groups:
-            t = (self.frequency_table(gp, True, False, True, pct_format,
+            t = (self.frequency_table(gp, True, True, False, pct_format,
                  remove_exclusions, False, show_mean, mean_format, 
                  show_values))
             t.set_index("Answer", inplace=True)
@@ -441,8 +447,11 @@ class SelectOneQuestion(SelectQuestion):
         t.set_index('category', inplace=True)
         return(t.to_json(orient="split"))
 
-    def graph_type(self):
-        return('horizontal_bar')
+    def graph_type(self, num_groups=1):
+        if num_groups <= 1:
+            return('horizontal_bar')
+        else:
+            return('diverging_bar')
 
 class SelectMultipleQuestion(SelectQuestion):
 
@@ -535,19 +544,24 @@ class SelectMultipleQuestion(SelectQuestion):
             tbl.loc[len(tbl)] = tots
         return(tbl)
 
+    def cut_by_json(self, response_set):
+        q2 = response_set.codebook.questions[response_set.grouping_var]
+        t = self.cut_by_question(q2, response_set, None, None, ".0%", True, 
+                                 False, False)
+        return(t.to_json(orient="split"))
 
     def cut_by_question(self, other_question, response_set, 
                         cut_var_label=None, question_label=None,
                         pct_format=".0%", remove_exclusions=True, 
-                        show_mean=True, mean_format=".1f"):
+                        col_multi_index=False, row_multi_index=False):
         if type(other_question) != SelectOneQuestion:
             raise(Exception("Can only call cut_by_question on a SelectOneQuestion type"))
-        df = response_set.copy()
+        df = response_set.data.copy()
         # Here we remove the exclusions for the cut variable, the 
         # exclusions for this question are removed in cut_by, if 
         # appropriate
         if remove_exclusions:
-            values_to_drop = [v for v, e in zip(other_question.values, 
+            values_to_drop = [v for v, e in zip(other_question.scale.values, 
                               other_question.scale.exclude_from_analysis) if e]
             for v in values_to_drop:
                 df[other_question.variable].replace(v, np.nan,
@@ -560,15 +574,15 @@ class SelectMultipleQuestion(SelectQuestion):
         if not oth_text:
             oth_text = other_question.text
         return(self.cut_by(groups, group_mapping, oth_text, question_label,
-               pct_format, remove_exclusions))
-
+               pct_format, remove_exclusions, col_multi_index, row_multi_index))
 
     def cut_by(self, groups, group_label_mapping, cut_var_label, 
                question_label=None, pct_format=".0%",
-               remove_exclusions=True):
+               remove_exclusions=True, col_multi_index=False, 
+               row_multi_index=False):
         freqs = []
         for k, gp in groups:
-            t = (self.frequency_table(gp, True, False, True, False, 
+            t = (self.frequency_table(gp, True, True, False, False, 
                  pct_format, remove_exclusions, False))
             t.set_index("Answer", inplace=True)
             series = t.ix[:,0]
@@ -590,14 +604,16 @@ class SelectMultipleQuestion(SelectQuestion):
                 newcols.append(i)
 
         # Add hierarchical index to rows
-        top_index = [cut_var_label]*len(groups)
-        df.index = pd.MultiIndex.from_arrays([top_index, 
-                   df.index.tolist()])
+        if row_multi_index:
+            top_index = [cut_var_label]*len(groups)
+            df.index = pd.MultiIndex.from_arrays([top_index, 
+                       df.index.tolist()])
 
         # Add hierarchical index to columns
-        col_top_index = [my_label]*len(self.choices)
-        df.columns = pd.MultiIndex.from_arrays([col_top_index, 
-                     newcols])
+        if col_multi_index:
+            col_top_index = [my_label]*len(self.scale.choices)
+            df.columns = pd.MultiIndex.from_arrays([col_top_index, 
+                         newcols])
 
         return(df)
 
@@ -626,5 +642,5 @@ class SelectMultipleQuestion(SelectQuestion):
         return(t.to_json(orient="split"))
 
 
-    def graph_type(self):
+    def graph_type(self, num_groups=1):
         return('horizontal_bar')

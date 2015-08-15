@@ -5,8 +5,10 @@ Provides utilities for producing a survey frequency report.
 """
 
 from jinja2 import Environment, FileSystemLoader
-import yaml
+import yaml, json
+from itertools import compress
 from unidecode import unidecode
+from surveyhelper.question import SelectQuestion
 
 class FrequencyReport:
 
@@ -19,6 +21,14 @@ class FrequencyReport:
         self.report_file = cfg['output']['report_file']
         self.report_title = cfg['report_data']['title']
         self.response_set = response_set
+
+    @staticmethod
+    def remove_empty_rows(json_txt):
+        j = json.loads(json_txt)
+        keep = [sum(d)!=0 for d in j['data']]
+        j['index'] = list(compress(j['index'], keep))
+        j['data'] = list(compress(j['data'], keep))
+        return(json.dumps(j), len(j['index']))
 
     def create_report(self, report_title="Placeholder Title"):
         env = Environment(loader=FileSystemLoader(self.template_dir),
@@ -38,17 +48,27 @@ class FrequencyReport:
             freq_tables = []
             freq_table_json = []
             group_names = []
-            for i, (name, data) in enumerate(data_groups):
-                freq_tables.append(q.freq_table_to_json(data))
-                freq_table_json.append(q.freq_table_to_json(data))
-                group_names.append(name)
+            if isinstance(q, SelectQuestion) and len(data_groups) > 1:
+                table = q.cut_by_json(self.response_set)
+                j, l = FrequencyReport.remove_empty_rows(q.cut_by_json(self.response_set))
+                if l > 0:
+                    freq_tables.append(j)
+                    freq_table_json.append(j)
+                    group_names.append('')
+            else:
+                for i, (name, data) in enumerate(data_groups):
+                    j, l = FrequencyReport.remove_empty_rows(q.freq_table_to_json(data))
+                    if l > 0:
+                        freq_tables.append(j)
+                        freq_table_json.append(j)
+                        group_names.append(name)
 
             questions.append((
                             q.text,
                             freq_tables,
                             freq_table_json,
                             group_names,
-                            q.graph_type(),
+                            q.graph_type(len(data_groups)),
                             midpoint
                             ))
         t = template.render(count=len(self.response_set.data),

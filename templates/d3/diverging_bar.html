@@ -150,7 +150,9 @@ var bars = qs.selectAll("rect")
 
 bars.append("rect")
   .attr("height", y.rangeBand())
-  .attr("x", function(d) { return x(d.x0); })
+  .attr("x", function(d) {
+    return x(d.x0); 
+  })
   .attr("width", function(d) { return x(d.x1) - x(d.x0); })
   .style("fill", function(d) { return color(d.name); })
   .on('mouseover', tip.show)
@@ -161,12 +163,14 @@ var min_pct = ((x.domain()[1]-x.domain()[0])*15)/width
 
 // Label each bar segment with the percentage
 bars.append("text")
-  .attr("x", function(d) { return x(d.x0)+2; })
+  .attr("x", function(d) { 
+    return x(d.x0)+2; 
+  })
   .attr("y", y.rangeBand()*.67)
   // .attr("dy", "0.5em")
   // .attr("dx", "0.5em")
   .style("text-anchor", "begin")
-  .text(function(d) { 
+  .text(function(d) {
     if (d.n !== 0 && d.pct > min_pct) {
       return Math.round(d.pct) + "%"
     }

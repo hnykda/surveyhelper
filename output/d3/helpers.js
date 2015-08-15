@@ -2,9 +2,9 @@ function wrap(text, length) {
   ind = 0
   text.each(function() {
     if (length instanceof Array) {
-      width = length[ind]-25
+      w = length[ind]-25
     } else {
-      width = length
+      w = length
     }
     var text = d3.select(this),
         words = text.text().split(/\s+/).reverse(),
@@ -18,7 +18,7 @@ function wrap(text, length) {
     while (word = words.pop()) {
       line.push(word);
       tspan.text(line.join(" "));
-      if (tspan.node().getComputedTextLength() > width) {
+      if (tspan.node().getComputedTextLength() > w) {
         line.pop();
         tspan.text(line.join(" "));
         line = [word];
