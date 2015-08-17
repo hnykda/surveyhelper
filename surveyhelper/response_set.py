@@ -9,7 +9,8 @@ class ResponseSet:
     def __init__(self, response_file, codebook, 
                  skiprows = [1], 
                  encoding="utf8",
-                 grouping_var=None):
+                 grouping_var=None,
+                 group_dict=None):
         df = pd.read_csv(response_file , skiprows=skiprows, encoding=encoding)
         # go through each variable in the codebook and make sure the corresponding 
         # column is integer coded
@@ -28,16 +29,32 @@ class ResponseSet:
         self.matched_questions = matched_questions
         self.codebook = codebook
         self.grouping_var = grouping_var
-
+        self.group_dict = group_dict
 
     def get_data(self):
-        if not self.grouping_var:
+        if not self.grouping_var or (self.group_dict and self.grouping_var):
             group_var = 'z'
             while group_var in self.data.columns:
                 group_var += 'z'
-            self.data[group_var] = 0
+            if not self.grouping_var:
+                self.data[group_var] = 0
+            else:
+                # Create a special variable to sort the data by so that groups
+                # end up in correct order
+                sort_var = group_var + "z"
+                while sort_var in self.data.columns:
+                    sort_var += 'z'
+                value_order = list(self.group_dict.keys())
+                asc = list(range(0,len(value_order)))
+                self.data[sort_var] = self.data[self.grouping_var].replace(
+                                      value_order, asc)
+                self.data.sort(sort_var, inplace=True)
+                # Then replace with labels
+                self.data[group_var] = self.data[self.grouping_var].replace(
+                                       self.group_dict)
+
         else:
             group_var = self.grouping_var
-        groups = self.data.groupby(group_var)
+        groups = self.data.groupby(group_var, sort=False)
         return(groups)
         

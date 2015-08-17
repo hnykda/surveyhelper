@@ -13,7 +13,7 @@ SelectOneMatrixQuestion, SelectMultipleMatrixQuestion, Codebook
 class QsfParser:
 
     def __init__(self, qsf_filename, 
-                 exclude_trash = True}):
+                 exclude_trash = True):
         with open(qsf_filename) as qsf_file:
             qsf = json.load(qsf_file)
         self.qsf = qsf
