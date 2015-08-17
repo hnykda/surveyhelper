@@ -24,7 +24,9 @@ class MatrixQuestion:
         for q in self.questions:
             q.reverse_choices()
 
-    def change_scale(self, newtype, values = None, midpoint = None):
+    def change_scale(self, newtype, 
+                     values = None, 
+                     midpoint = None):
         for q in self.questions:
             q.change_scale(newtype, values, midpoint)
 
@@ -64,7 +66,8 @@ class MatrixQuestion:
     def get_children_text(self):
         return([q.text for q in self.questions])
 
-    def pretty_print(self, show_choices=True):
+    def pretty_print(self, 
+                     show_choices=True):
         print("{} ({})".format(self.text, self.label))
         if show_choices:
             self.questions[0].pretty_print_choices()
@@ -84,7 +87,9 @@ class MatrixQuestion:
 
 class SelectOneMatrixQuestion(MatrixQuestion):
 
-    def get_choices(self, remove_exclusions=True, show_values=False):
+    def get_choices(self, 
+                    remove_exclusions=True, 
+                    show_values=False):
         self.assert_choices_same()
         if len(self.questions) > 0:
             return(self.questions[0].scale.choices_to_str(remove_exclusions,
@@ -92,9 +97,13 @@ class SelectOneMatrixQuestion(MatrixQuestion):
         else:
             return([])
 
-    def frequency_table(self, df, show="ct", pct_format=".0%",
-                        remove_exclusions = True, show_totals=True, 
-                        remove_zero_totals=True, show_mean=True, 
+    def frequency_table(self, df, 
+                        show="ct", 
+                        pct_format=".0%",
+                        remove_exclusions = True, 
+                        show_totals=True, 
+                        remove_zero_totals=True, 
+                        show_mean=True, 
                         mean_format=".1f"):
         if len(self.questions) == 0:
             return(pd.DataFrame())
@@ -142,9 +151,12 @@ class SelectOneMatrixQuestion(MatrixQuestion):
         return(tbl)
 
     def cut_by_question(self, other_question, response_set, 
-                        cut_var_label=None, question_labels=None,
-                        pct_format=".0%", remove_exclusions=True, 
-                        remove_zero_totals=True, show_mean=True, 
+                        cut_var_label=None,
+                        question_labels=None,
+                        pct_format=".0%",
+                        remove_exclusions=True, 
+                        remove_zero_totals=True,
+                        show_mean=True, 
                         mean_format=".1f"):
         if type(other_question) != SelectOneQuestion:
             raise(Exception("Can only call cut_by_question on a SelectOneQuestion type"))
@@ -158,8 +170,11 @@ class SelectOneMatrixQuestion(MatrixQuestion):
                mean_format))
 
     def cut_by(self, groups, group_label_mapping, cut_var_label, 
-               question_labels=None, pct_format=".0%",
-               remove_exclusions=True, remove_zero_totals=True, show_mean=True,
+               question_labels=None, 
+               pct_format=".0%",
+               remove_exclusions=True, 
+               remove_zero_totals=True, 
+               show_mean=True,
                mean_format=".1f"):
 
         results = []
@@ -202,8 +217,11 @@ class SelectMultipleMatrixQuestion(MatrixQuestion):
         else:
             []
 
-    def frequency_table(self, df, show="ct", pct_format=".0%",
-                        remove_exclusions = True, show_totals=True):
+    def frequency_table(self, df, 
+                        show="ct", 
+                        pct_format=".0%",
+                        remove_exclusions = True, 
+                        show_totals=True):
         data = []
         if show == "ct":
             for q in self.questions:
@@ -281,7 +299,9 @@ class SelectQuestion:
 class SelectOneQuestion(SelectQuestion):
 
     def __init__(self, text, var, choices, label, values, 
-                 exclude_from_analysis, matrix=None, scale_type='likert'):
+                 exclude_from_analysis, 
+                 matrix=None, 
+                 scale_type='likert'):
         self.text = text
         self.label = label
         self.variable = var
@@ -292,7 +312,8 @@ class SelectOneQuestion(SelectQuestion):
     def get_variable_names(self):
         return([self.variable])
 
-    def pretty_print(self, show_choices=True):
+    def pretty_print(self, 
+                     show_choices=True):
         print("{} ({})".format(self.text, self.label))
         if show_choices:
             self.pretty_print_choices()
@@ -303,7 +324,8 @@ class SelectOneQuestion(SelectQuestion):
     def reverse_choices(self):
         self.scale.reverse_choices()
 
-    def mean(self, df, remove_exclusions=True):
+    def mean(self, df, 
+             remove_exclusions=True):
         values = self.scale.get_values(remove_exclusions)
         freq, n, x = self.tally(df, remove_exclusions)
         num = sum([ct * v for ct, v in zip(freq, values)])
@@ -312,7 +334,8 @@ class SelectOneQuestion(SelectQuestion):
         else:
             return(np.nan)
 
-    def tally(self, df, remove_exclusions=True):
+    def tally(self, df, 
+              remove_exclusions=True):
         """
         Returns ([response frequencies], respondents, nonrespondents) 
         tuple where response frequencies is a count of responses for 
@@ -330,10 +353,17 @@ class SelectOneQuestion(SelectQuestion):
         return((cts, sum(cts), len(unit_record)-sum(cts)))
 
 
-    def frequency_table(self, df, show_question=True, ct=True, 
-                        pct=True, pct_format=".0%", remove_exclusions=True,
-                        show_totals=True, remove_zero_totals=True, 
-                        show_mean=True, mean_format=".1f", show_values=True):
+    def frequency_table(self, df, 
+                        show_question=True, 
+                        ct=True, 
+                        pct=True, 
+                        pct_format=".0%", 
+                        remove_exclusions=True,
+                        show_totals=True, 
+                        remove_zero_totals=True, 
+                        show_mean=True, 
+                        mean_format=".1f", 
+                        show_values=True):
         cts, resp, nonresp = self.tally(df, remove_exclusions)
         if resp == 0 and remove_zero_totals:
             return(pd.DataFrame())
@@ -383,11 +413,16 @@ class SelectOneQuestion(SelectQuestion):
         return(t.to_json(orient="split"))
 
     def cut_by_question(self, other_question, response_set, 
-                        cut_var_label=None, question_label=None,
-                        pct_format=".0%", remove_exclusions=True,
-                        col_multi_index=False, row_multi_index=False,
-                        remove_zero_totals=True, show_mean=True, 
-                        mean_format=".1f", show_values=False):
+                        cut_var_label=None, 
+                        question_label=None,
+                        pct_format=".0%", 
+                        remove_exclusions=True,
+                        col_multi_index=False, 
+                        row_multi_index=False,
+                        remove_zero_totals=True, 
+                        show_mean=True, 
+                        mean_format=".1f", 
+                        show_values=False):
         if type(other_question) != SelectOneQuestion:
             raise(Exception("Can only call cut_by_question on a SelectOneQuestion type"))
         df = response_set.data.copy()
@@ -411,10 +446,15 @@ class SelectOneQuestion(SelectQuestion):
                remove_zero_totals, show_mean, mean_format, show_values))
 
     def cut_by(self, groups, group_label_mapping, cut_var_label, 
-               question_label=None, pct_format=".0%",
-               remove_exclusions=True, col_multi_index=False, 
-               row_multi_index=False, remove_zero_totals=True, 
-               show_mean=True, mean_format=".1f", show_values=False):
+               question_label=None, 
+               pct_format=".0%",
+               remove_exclusions=True, 
+               col_multi_index=False, 
+               row_multi_index=False, 
+               remove_zero_totals=True, 
+               show_mean=True, 
+               mean_format=".1f", 
+               show_values=False):
         freqs = []
         for k, gp in groups:
             t = (self.frequency_table(gp, True, True, False, pct_format,
@@ -453,7 +493,8 @@ class SelectOneQuestion(SelectQuestion):
 
         return(df)
 
-    def compare_groups(self, groupby, pval = .05):
+    def compare_groups(self, groupby, 
+                       pval = .05):
         data = [d[self.variable].dropna() for groupname, d in groupby]
         if len(groupby) == 2:
             ts, ps = ttest_ind(*data, equal_var=False)
@@ -496,7 +537,8 @@ class SelectMultipleQuestion(SelectQuestion):
         self.scale.reverse_choices()
         self.variables.reverse()
 
-    def pretty_print(self, show_choices=True):
+    def pretty_print(self, 
+                     show_choices=True):
         print("{} ({})".format(self.text, self.label))
         if show_choices:
             self.pretty_print_choices()
@@ -511,7 +553,8 @@ class SelectMultipleQuestion(SelectQuestion):
                 l.append("{} ({})".format(c, v))
         print(", ".join(l))
 
-    def tally(self, df, remove_exclusions=True):
+    def tally(self, df, 
+              remove_exclusions=True):
         """
         Returns (list, int1, int2) tuple where list is a count of
         responses for each answer choice. Int1 is the number of 
@@ -539,9 +582,13 @@ class SelectMultipleQuestion(SelectQuestion):
         return(cts, respondents, nonrespondents)
 
 
-    def frequency_table(self, df, show_question=True, ct=True, 
-                        pct_respondents=True, pct_responses=False, 
-                        pct_format=".0%", remove_exclusions=True,
+    def frequency_table(self, df, 
+                        show_question=True, 
+                        ct=True, 
+                        pct_respondents=True, 
+                        pct_responses=False, 
+                        pct_format=".0%", 
+                        remove_exclusions=True,
                         show_totals=True):
         cts, resp, nonresp = self.tally(df, remove_exclusions)
         data = []
@@ -576,9 +623,12 @@ class SelectMultipleQuestion(SelectQuestion):
         return(t.to_json(orient="split"))
 
     def cut_by_question(self, other_question, response_set, 
-                        cut_var_label=None, question_label=None,
-                        pct_format=".0%", remove_exclusions=True, 
-                        col_multi_index=False, row_multi_index=False):
+                        cut_var_label=None, 
+                        question_label=None,
+                        pct_format=".0%", 
+                        remove_exclusions=True, 
+                        col_multi_index=False, 
+                        row_multi_index=False):
         if type(other_question) != SelectOneQuestion:
             raise(Exception("Can only call cut_by_question on a SelectOneQuestion type"))
         df = response_set.data.copy()
@@ -602,8 +652,10 @@ class SelectMultipleQuestion(SelectQuestion):
                pct_format, remove_exclusions, col_multi_index, row_multi_index))
 
     def cut_by(self, groups, group_label_mapping, cut_var_label, 
-               question_label=None, pct_format=".0%",
-               remove_exclusions=True, col_multi_index=False, 
+               question_label=None, 
+               pct_format=".0%",
+               remove_exclusions=True, 
+               col_multi_index=False, 
                row_multi_index=False):
         freqs = []
         for k, gp in groups:
@@ -642,7 +694,9 @@ class SelectMultipleQuestion(SelectQuestion):
 
         return(df)
 
-    def compare_groups(self, groupby, remove_exclusions=True, pval = .05):
+    def compare_groups(self, groupby, 
+                       remove_exclusions=True, 
+                       pval = .05):
         groupnames = groupby.groups.keys()
         obs_by_cut = []
         ct_by_cut = []

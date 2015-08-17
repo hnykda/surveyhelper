@@ -3,7 +3,8 @@ from itertools import compress
 class QuestionScale():
 
     @staticmethod
-    def create_scale(type, choices, exclude_from_analysis, values=None, 
+    def create_scale(type, choices, exclude_from_analysis, 
+                     values=None, 
                      midpoint=None):
         if type=='nominal':
             return(NominalScale(choices, exclude_from_analysis))
@@ -23,7 +24,9 @@ class QuestionScale():
                 self.exclude_from_analysis == other.exclude_from_analysis)
 
     @staticmethod
-    def change_scale(oldscale, new_type, new_values=None, new_midpoint=None):
+    def change_scale(oldscale, new_type, 
+                     new_values=None,
+                     new_midpoint=None):
         if hasattr(oldscale, 'values') and new_values==None:
             new_values = oldscale.values
         if hasattr(oldscale, 'midpoint') and new_midpoint==None:
@@ -36,7 +39,8 @@ class QuestionScale():
         self.choices.reverse()
         self.exclude_from_analysis.reverse()
 
-    def get_choices(self, remove_exclusions=True):
+    def get_choices(self, 
+                    remove_exclusions=True):
         choices = self.choices
         if remove_exclusions:
             choices = list(compress(choices, 
@@ -79,14 +83,17 @@ class OrdinalScale(QuestionScale):
         super().reverse_choices()
         self.values.reverse()
 
-    def get_values(self, remove_exclusions=True):
+    def get_values(self, 
+                   remove_exclusions=True):
         values = self.values
         if remove_exclusions:
             values = list(compress(values, 
                       [not x for x in self.exclude_from_analysis]))
         return(values)
 
-    def choices_to_str(self, remove_exclusions=False, show_values=True):
+    def choices_to_str(self, 
+                       remove_exclusions=False, 
+                       show_values=True):
         choices = self.get_choices(remove_exclusions)
         values = self.get_values(remove_exclusions)
         if show_values:
@@ -102,7 +109,8 @@ class OrdinalScale(QuestionScale):
 
 class LikertScale(OrdinalScale):
 
-    def __init__(self, choices, exclude_from_analysis, values, midpoint=None):
+    def __init__(self, choices, exclude_from_analysis, values, 
+                 midpoint=None):
         super().__init__(choices, exclude_from_analysis, values)
         ct = len(self.exclude_from_analysis) - sum(self.exclude_from_analysis)
         if not midpoint:

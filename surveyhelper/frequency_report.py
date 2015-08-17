@@ -22,7 +22,8 @@ class FrequencyReport:
         self.report_title = cfg['report_data']['title']
         self.response_set = response_set
 
-    def create_report(self, report_title="Placeholder Title"):
+    def create_report(self, 
+                      report_title="Placeholder Title"):
         env = Environment(loader=FileSystemLoader(self.template_dir),
                   extensions=['jinja2.ext.with_'])
         template = env.get_template(self.freq_template)

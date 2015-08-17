@@ -12,11 +12,12 @@ SelectOneMatrixQuestion, SelectMultipleMatrixQuestion, Codebook
 
 class QsfParser:
 
-    def __init__(self, qsf_filename, options = {'exclude_trash': True}):
+    def __init__(self, qsf_filename, 
+                 exclude_trash = True}):
         with open(qsf_filename) as qsf_file:
             qsf = json.load(qsf_file)
         self.qsf = qsf
-        self.options = options
+        self.exclude_trash = exclude_trash
 
     @staticmethod
     def remove_html(text):
@@ -24,7 +25,8 @@ class QsfParser:
         [s.extract() for s in soup('style')]
         return(soup.get_text().strip())
 
-    def create_codebook(self, title = None):
+    def create_codebook(self, 
+                        title = None):
         q = self.create_questions()
         if title == None:
             title = self.get_survey_title()
@@ -82,12 +84,11 @@ class QsfParser:
         """
         block_order = self.get_block_order()
         blocks_by_id = self.get_block_dict()
-        exclude_trash = self.options['exclude_trash']
 
         ordered_qids = []
         for k in block_order:
             data = blocks_by_id[k]
-            if ((data['Type'] == 'Trash' and exclude_trash) or 
+            if ((data['Type'] == 'Trash' and self.exclude_trash) or 
             'BlockElements' not in data):
                 continue
             qids = [e['QuestionID'] for e in data['BlockElements']

@@ -6,7 +6,9 @@ class ResponseSet:
     # TODO - As currently written this code skips the second row of data,
     # because that's what we want to do for Qualtrics csv results, but this is
     # potentially a big gotcha, so document well or change.
-    def __init__(self, response_file, codebook, skiprows = [1], encoding="utf8",
+    def __init__(self, response_file, codebook, 
+                 skiprows = [1], 
+                 encoding="utf8",
                  grouping_var=None):
         df = pd.read_csv(response_file , skiprows=skiprows, encoding=encoding)
         # go through each variable in the codebook and make sure the corresponding 
