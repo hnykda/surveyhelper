@@ -38,13 +38,23 @@
   {% include "horizontal_bar.html" -%}
   {% endwith -%}
 {% endif -%}
+{% if charttype == 'grouped_diverging_bar' or charttype == 'grouped_bar' -%}
+  {% if charttype == 'grouped_diverging_bar' -%}
+    {% set diverging=True -%}
+  {% else -%}
+    {% set diverging=False -%}
+  {% endif -%}
+  {% with index=outer_loop.index, group = loop.index, diverging=diverging -%}
+  {% include "grouped_diverging_bar.html" -%}
+  {% endwith -%}
+{% endif -%}
 {% if charttype == 'diverging_bar' or charttype == 'horizontal_stacked_bar' -%}
   {% if charttype == 'diverging_bar' -%}
     {% set diverging=True -%}
   {% else -%}
     {% set diverging=False -%}
   {% endif -%}
-  {% with index=outer_loop.index, group = loop.index -%}
+  {% with index=outer_loop.index, group = loop.index, diverging=diverging -%}
   {% include "diverging_bar.html" %}
   {% endwith -%}
 {% endif -%}

@@ -8,7 +8,7 @@ from jinja2 import Environment, FileSystemLoader
 import yaml, json
 from itertools import compress
 from unidecode import unidecode
-from surveyhelper.question import SelectQuestion
+from surveyhelper.question import SelectQuestion, SelectOneMatrixQuestion
 
 class FrequencyReport:
 
@@ -41,11 +41,21 @@ class FrequencyReport:
             freq_tables = []
             freq_table_json = []
             group_names = []
+
+            # TODO: Clean this up - shouldn't be conditioning on question type
             if isinstance(q, SelectQuestion) and len(data_groups) > 1:
                 table = q.cut_by_json(self.response_set)
                 freq_tables.append(table)
                 freq_table_json.append(table)
                 group_names.append('')
+            elif isinstance(q, SelectOneMatrixQuestion):
+                j = q.grouped_freq_table_to_json(data_groups)
+                if j != '':
+                    freq_tables.append(j)
+                    freq_table_json.append(j)
+                    group_names.append('')
+            # in reality, I don't think there's anything left for this "else"
+            # since chack all matrix questions aren't graphed
             else:
                 for i, (name, data) in enumerate(data_groups):
                     j = q.freq_table_to_json(data)

@@ -199,12 +199,36 @@ class SelectOneMatrixQuestion(MatrixQuestion):
             t.set_index('Question', inplace=True)
             return(t.to_json(orient="split"))
 
+    def grouped_freq_table_to_json(self, gb):
+        tables = []
+        for i, (name, df) in enumerate(gb):
+            t = self.frequency_table(df, "ct", "", True, False, False, "")
+            t["Question"] = t["Question"] + ":" + name
+            t["sort_ind"] = t.index
+            t["sort_ind"] = t["sort_ind"] + i/10
+            t.set_index('Question', inplace=True)
+            if t.ix[:,1:-1].sum().sum() != 0:
+                tables.append(t)
+        if len(tables) == 0:
+            return('')
+        else:
+            df = pd.concat(tables)
+            df.sort("sort_ind", axis=0, inplace=True)
+            df.drop("sort_ind", axis=1, inplace=True)
+            return(df.to_json(orient="split"))
+
     def graph_type(self, num_groups=1):
         if len(self.questions) > 0:
             if type(self.questions[0].scale) == LikertScale:
-                return('diverging_bar')
+                if num_groups > 1:
+                    return('grouped_diverging_bar')
+                else:
+                    return('diverging_bar')
             else:
-                return('horizontal_stacked_bar')
+                if num_groups > 1:
+                    return('grouped_bar')
+                else:
+                    return('horizontal_stacked_bar')
         else:
             return('')
 
@@ -722,4 +746,7 @@ class SelectMultipleQuestion(SelectQuestion):
 
 
     def graph_type(self, num_groups=1):
-        return('horizontal_bar')
+        if num_groups <= 1:
+            return('horizontal_bar')
+        else:
+            return('grouped_bar')

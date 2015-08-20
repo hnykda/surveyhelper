@@ -32,6 +32,15 @@ class ResponseSet:
         self.group_dict = group_dict
 
     def get_data(self):
+        if (not self.grouping_var and self.group_dict):
+            raise(Exception(
+                  "Grouping variable must also be specified when a grouping dict is passed in."
+                 ))
+        if (self.grouping_var and not self.group_dict):
+            raise(Exception(
+                  "Grouping dict must also be specified when a grouping variable is passed in."
+                 ))
+
         if not self.grouping_var or (self.group_dict and self.grouping_var):
             group_var = 'z'
             while group_var in self.data.columns:

@@ -1,7 +1,5 @@
 <div id="chart{{index}}_group{{group}}"></div>
-
 <script>
-
 var json = JSON.parse(document.getElementById('data{{index}}_group{{group}}').innerHTML);
 var categories = json['columns'];
 var numcat = categories.length;
@@ -11,15 +9,44 @@ var qct = questions.length;
 
 var data = json['data'];
 
+var yaxis_map = {}
+var groups = {}
+questions.forEach(function(q) {
+  yaxis_map[q] = q.split(":").pop()
+  groups[q.split(":").pop()] = 1
+})
+groups = Object.keys(groups)
+
+var main_q_labels = []
+questions.forEach(function(q) {
+  k = q.substr(0, q.lastIndexOf(":"))
+  if (main_q_labels.indexOf(k) == -1) {
+    main_q_labels.push(k)
+  }
+})
+
+var height = questions.length * 40;
 var max_label = d3.max(questions.map(function(q) {return((q.length*5)+20)}));
-var margin_left = Math.min(max_label, 300);
+var max_group_label = d3.max(groups.map(function(q) {return((q.length*5)+20)}));
+
+// Maximum question label is roughly max_label pixels wide, but it will
+// be rotated and wrapped into a space roughly group_height pixels wide
+var group_height = (height / main_q_labels.length) - 10;
+var est_group_width = (Math.ceil(max_label / group_height) * 20);
+
+// Now add in the width of the item labels
+var group_label_width = Math.min(max_group_label, 300);
+var margin_left = est_group_width + group_label_width; //Math.min(max_label, 300);
 
 var total_width = 745;
 var margin = {top: 40, right: 15, bottom: 20, left: margin_left},
-    width = total_width - margin.left - margin.right,
-    height = questions.length * 40;
+    width = total_width - margin.left - margin.right;
+    
 
-var y = d3.scale.ordinal()
+var y1 = d3.scale.ordinal()
+    .rangeRoundBands([0, height], .25);
+
+var y2 = d3.scale.ordinal()
     .rangeRoundBands([0, height], .25);
 
 var x = d3.scale.linear()
@@ -42,9 +69,15 @@ var xAxis = d3.svg.axis()
     .scale(x)
     .orient("bottom");
 
-var yAxis = d3.svg.axis()
-    .scale(y)
+var yAxis1 = d3.svg.axis()
+    .scale(y1)
     .orient("left")
+    .tickSize(0)
+
+var yAxis2 = d3.svg.axis()
+    .scale(y2)
+    .orient("left")
+    .tickFormat(function (d) {return yaxis_map[d]})
 
 var tip = d3.tip()
   .attr('class', 'd3-tip')
@@ -74,7 +107,7 @@ data.forEach(function(d) {
 
   categories.forEach(function(c, i) {
       d[c + "_N"] = d[i];
-            if (tot == 0) {
+      if (tot == 0) {
         d[c + "_pct"] = 0
         d[c] = 0
       }
@@ -119,20 +152,52 @@ var min_val = d3.min(data, function(d) { return d.boxes[0].x0; });
 var max_val = d3.max(data, function(d) { return d.boxes[numcat-1].x1;});
 
 x.domain([min_val, max_val]).nice();
-y.domain(questions);
+y1.domain(main_q_labels)
+y2.domain(questions);
 
 svg.append("g")
   .attr("class", "x dbaraxis")
   .call(xAxis)
   .attr("transform", "translate(0," + height + ")");
 
+var y1wrapwidth = (height / main_q_labels.length)*.9;
 svg.append("g")
-  .attr("class", "y dbaraxis")
-  .call(yAxis)
+  .attr("class", "y1 dbaraxis")
+  .call(yAxis1)
 .selectAll(".tick text")
-  .call(wrap, margin.left-10);
+  .call(wrap, y1wrapwidth, true)
 
-svg.selectAll(".wrapped_text")[0].map(
+xtrans = (-1*margin.left)*.75
+svg.selectAll(".y1.dbaraxis text")
+  .attr("transform", "rotate(-90) translate(0," + xtrans + ")")
+
+svg.append("g")
+  .attr("class", "y2 dbaraxis")  
+  .call(yAxis2)
+.selectAll(".tick text")
+  // .call(extract_suffix, ":")
+  .call(wrap, group_label_width);
+
+// Draw horizontal lines separating the groups
+vals = y2.range()
+bar_space = 0
+if (vals.length > 1) {
+  bar_space = (vals[1] - vals[0]) - y2.rangeBand()
+}
+yax = d3.select("#chart{{index}}_group{{group}} .y2.dbaraxis")
+for (i = 1; i < main_q_labels.length; i++) {
+  ypos = vals[(i*groups.length)] // start of bar
+  // need to subtract out hald of interstitial
+  ypos = ypos - (bar_space / 2)
+  yax.append("line")
+  .attr("x1", 0)
+  .attr("y1", ypos)
+  .attr("x2", width)
+  .attr("y2", ypos)
+}
+
+// Move y2 axis text to correct position
+svg.selectAll("#chart{{index}}_group{{group}} .y2 .wrapped_text")[0].map(
   function(t) {
     l = t.getAttribute("numlines");
     var offset = (l-1)*-6
@@ -146,7 +211,7 @@ var qs = svg.selectAll(".question{{index}}_group{{group}}")
   .attr("class", "bar")
   .attr("transform", 
     function(d) { 
-        return "translate(0," + y(questions[d.i]) + ")"; 
+        return "translate(0," + y2(questions[d.i]) + ")"; 
     }
   );
 
@@ -155,7 +220,7 @@ var bars = qs.selectAll("rect")
 .enter().append("g").attr("class", "subbar");
 
 bars.append("rect")
-  .attr("height", y.rangeBand())
+  .attr("height", y2.rangeBand())
   .attr("x", function(d) {
     return x(d.x0); 
   })
@@ -172,7 +237,7 @@ bars.append("text")
   .attr("x", function(d) { 
     return x(d.x0)+2; 
   })
-  .attr("y", y.rangeBand()*.67)
+  .attr("y", y2.rangeBand()*.67)
   // .attr("dy", "0.5em")
   // .attr("dx", "0.5em")
   .style("text-anchor", "begin")
@@ -186,7 +251,7 @@ bars.append("text")
   });
 
 qs.insert("rect",":first-child")
-  .attr("height", y.rangeBand())
+  .attr("height", y2.rangeBand())
   .attr("x", "1")
   .attr("width", width)
   .attr("fill-opacity", "0")
@@ -275,4 +340,3 @@ svg.selectAll(".legendbox{{index}}_group{{group}}").attr(
     "transform", "translate(" + movesize  + ", 15)"
 );
 </script>
-
