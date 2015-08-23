@@ -187,7 +187,7 @@ if (vals.length > 1) {
 yax = d3.select("#chart{{index}}_group{{group}} .y2.dbaraxis")
 for (i = 1; i < main_q_labels.length; i++) {
   ypos = vals[(i*groups.length)] // start of bar
-  // need to subtract out hald of interstitial
+  // need to subtract out half of interstitial
   ypos = ypos - (bar_space / 2)
   yax.append("line")
   .attr("x1", 0)

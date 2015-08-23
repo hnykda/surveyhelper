@@ -5,7 +5,7 @@ Provides utilities for producing a survey frequency report.
 """
 
 from jinja2 import Environment, FileSystemLoader
-import yaml, json
+import yaml
 from itertools import compress
 from unidecode import unidecode
 from surveyhelper.question import SelectQuestion, SelectOneMatrixQuestion

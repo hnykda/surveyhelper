@@ -1,6 +1,7 @@
 from itertools import compress
 import pandas as pd
 import numpy as np
+import json
 from abc import ABCMeta, abstractmethod
 from surveyhelper.scale import QuestionScale, LikertScale, NominalScale, OrdinalScale
 from scipy.stats import ttest_ind, f_oneway, chisquare
@@ -432,28 +433,54 @@ class SelectOneQuestion(SelectQuestion):
 
     def cut_by_json(self, response_set):
         q2 = response_set.codebook.questions[response_set.grouping_var]
-        t = self.cut_by_question(q2, response_set, None, None, ".0%", True, 
-                                 False, False, True, False)
-        return(t.to_json(orient="split"))
+        freq_table_options={
+            "show_question":True, 
+            "ct":True, 
+            "pct":False,
+            "pct_format":"", 
+            "remove_exclusions":True, 
+            "show_totals":False,
+            "remove_zero_totals":True,
+            "show_mean":False,
+            "mean_format":"",
+            "show_values":False                         
+        }
+        t = self.cut_by_question(q2, response_set, freq_table_options)
+        totals = t.sum(1).tolist()
+        totals = [int(t) for t in totals]
+        if self.graph_type(2) == 'clustered_horizontal_bar':
+            t = t.T
+        j = t.to_json(orient="split")
+        p = json.loads(j)
+        p["totals"] = totals
+        return(json.dumps(p))
 
-    def cut_by_question(self, other_question, response_set, 
-                        cut_var_label=None, 
-                        question_label=None,
-                        pct_format=".0%", 
-                        remove_exclusions=True,
-                        col_multi_index=False, 
-                        row_multi_index=False,
-                        remove_zero_totals=True, 
-                        show_mean=True, 
-                        mean_format=".1f", 
-                        show_values=False):
+    def cut_by_question(self, other_question, response_set,
+                        freq_table_options={
+                            "show_question":True, 
+                            "ct":True, 
+                            "pct":False,
+                            "pct_format":"", 
+                            "remove_exclusions":True, 
+                            "show_totals":False,
+                            "remove_zero_totals":True,
+                            "show_mean":False,
+                            "mean_format":"",
+                            "show_values":False                         
+                        },              
+                        cut_by_options={
+                            "question_label":None,
+                            "col_multi_index":False, 
+                            "row_multi_index":False 
+                        },
+                        cut_var_label=None):
         if type(other_question) != SelectOneQuestion:
             raise(Exception("Can only call cut_by_question on a SelectOneQuestion type"))
         df = response_set.data.copy()
         # Here we remove the exclusions for the cut variable, the 
         # exclusions for this question are removed in cut_by, if 
         # appropriate
-        if remove_exclusions:
+        if freq_table_options["remove_exclusions"]:
             values_to_drop = other_question.scale.excluded_choices()
             for v in values_to_drop:
                 df[other_question.variable].replace(v, np.nan,
@@ -465,25 +492,27 @@ class SelectOneQuestion(SelectQuestion):
         oth_text = cut_var_label
         if not oth_text:
             oth_text = other_question.text
-        return(self.cut_by(groups, group_mapping, oth_text, question_label,
-               pct_format, remove_exclusions, col_multi_index, row_multi_index, 
-               remove_zero_totals, show_mean, mean_format, show_values))
+        return(self.cut_by(groups, group_mapping, oth_text, freq_table_options,
+                           **cut_by_options))
 
     def cut_by(self, groups, group_label_mapping, cut_var_label, 
-               question_label=None, 
-               pct_format=".0%",
-               remove_exclusions=True, 
+               freq_table_options = {
+                "ct":True, 
+                "pct":False,
+                "pct_format":"", 
+                "remove_exclusions":True, 
+                "show_totals":False,
+                "remove_zero_totals":True,
+                "show_mean":False,
+                "mean_format":"",
+                "show_values":False
+               },
+               question_label=None,
                col_multi_index=False, 
-               row_multi_index=False, 
-               remove_zero_totals=True, 
-               show_mean=True, 
-               mean_format=".1f", 
-               show_values=False):
+               row_multi_index=False):
         freqs = []
         for k, gp in groups:
-            t = (self.frequency_table(gp, True, True, False, pct_format,
-                 remove_exclusions, False, remove_zero_totals, show_mean, 
-                 mean_format, show_values))
+            t = (self.frequency_table(gp, **freq_table_options))
             if len(t) > 0:
                 t.set_index("Answer", inplace=True)
                 series = t.ix[:,0]
@@ -491,7 +520,7 @@ class SelectOneQuestion(SelectQuestion):
                 freqs.append(series)
         df = pd.DataFrame(freqs)
 
-        if show_mean:
+        if freq_table_options["show_mean"]:
             if self.compare_groups(groups):
                 df.columns = df.columns.tolist()[:-1] + \
                              [df.columns.tolist()[-1]+"*"]
@@ -540,8 +569,10 @@ class SelectOneQuestion(SelectQuestion):
     def graph_type(self, num_groups=1):
         if num_groups <= 1:
             return('horizontal_bar')
-        else:
+        elif isinstance(self.scale, LikertScale):
             return('diverging_bar')
+        else:
+            return('clustered_horizontal_bar')
 
 class SelectMultipleQuestion(SelectQuestion):
 
@@ -605,7 +636,6 @@ class SelectMultipleQuestion(SelectQuestion):
                     ct += 1
         return(cts, respondents, nonrespondents)
 
-
     def frequency_table(self, df, 
                         show_question=True, 
                         ct=True, 
@@ -642,24 +672,46 @@ class SelectMultipleQuestion(SelectQuestion):
 
     def cut_by_json(self, response_set):
         q2 = response_set.codebook.questions[response_set.grouping_var]
-        t = self.cut_by_question(q2, response_set, None, None, ".0%", True, 
-                                 False, False)
-        return(t.to_json(orient="split"))
+        freq_table_options={
+            "show_question":True, 
+            "ct":True, 
+            "pct_respondents":False,
+            "pct_responses":False, 
+            "pct_format":"", 
+            "remove_exclusions":True, 
+            "show_totals":True                         
+        }
+        t = self.cut_by_question(q2, response_set, freq_table_options)
+        totals = t[t.columns[-1]].tolist()
+        totals = [int(i) for i in totals]
+        r = t.iloc[:,:-1].T.to_json(orient="split")
+        j = json.loads(r)
+        j["totals"] = totals
+        return(json.dumps(j))
 
     def cut_by_question(self, other_question, response_set, 
-                        cut_var_label=None, 
-                        question_label=None,
-                        pct_format=".0%", 
-                        remove_exclusions=True, 
-                        col_multi_index=False, 
-                        row_multi_index=False):
+                        freq_table_options={
+                            "show_question":True, 
+                            "ct":True, 
+                            "pct_respondents":False,
+                            "pct_responses":False, 
+                            "pct_format":".0%", 
+                            "remove_exclusions":True, 
+                            "show_totals":False                          
+                        },
+                        cut_by_options={
+                            "question_label":None,
+                            "col_multi_index":False, 
+                            "row_multi_index":False                            
+                        }, 
+                        cut_var_label=None):
         if type(other_question) != SelectOneQuestion:
             raise(Exception("Can only call cut_by_question on a SelectOneQuestion type"))
         df = response_set.data.copy()
         # Here we remove the exclusions for the cut variable, the 
         # exclusions for this question are removed in cut_by, if 
         # appropriate
-        if remove_exclusions:
+        if freq_table_options["remove_exclusions"]:
             values_to_drop = [v for v, e in zip(other_question.scale.values, 
                               other_question.scale.exclude_from_analysis) if e]
             for v in values_to_drop:
@@ -672,19 +724,25 @@ class SelectMultipleQuestion(SelectQuestion):
         oth_text = cut_var_label
         if not oth_text:
             oth_text = other_question.text
-        return(self.cut_by(groups, group_mapping, oth_text, question_label,
-               pct_format, remove_exclusions, col_multi_index, row_multi_index))
+        return(self.cut_by(groups, group_mapping, oth_text, freq_table_options,
+               **cut_by_options))
 
-    def cut_by(self, groups, group_label_mapping, cut_var_label, 
+    def cut_by(self, groups, group_label_mapping, cut_var_label,
+               freq_table_options={
+                    "show_question":True, 
+                    "ct":True, 
+                    "pct_respondents":False,
+                    "pct_responses":False, 
+                    "pct_format":".0%", 
+                    "remove_exclusions":True, 
+                    "show_totals":False
+               }, 
                question_label=None, 
-               pct_format=".0%",
-               remove_exclusions=True, 
                col_multi_index=False, 
                row_multi_index=False):
         freqs = []
         for k, gp in groups:
-            t = (self.frequency_table(gp, True, True, False, False, 
-                 pct_format, remove_exclusions, False))
+            t = (self.frequency_table(gp, **freq_table_options))
             t.set_index("Answer", inplace=True)
             series = t.ix[:,0]
             series.name = group_label_mapping[k]
@@ -696,7 +754,7 @@ class SelectMultipleQuestion(SelectQuestion):
             my_label = self.text
 
         # Add significance flags
-        sigs = self.compare_groups(groups, remove_exclusions)
+        sigs = self.compare_groups(groups, freq_table_options["remove_exclusions"])
         newcols = []
         for s, i in zip(sigs, df.columns.tolist()):
             if s:
@@ -715,7 +773,6 @@ class SelectMultipleQuestion(SelectQuestion):
             col_top_index = [my_label]*len(self.scale.choices)
             df.columns = pd.MultiIndex.from_arrays([col_top_index, 
                          newcols])
-
         return(df)
 
     def compare_groups(self, groupby, 
@@ -744,9 +801,8 @@ class SelectMultipleQuestion(SelectQuestion):
         t.set_index('category', inplace=True)
         return(t.to_json(orient="split"))
 
-
     def graph_type(self, num_groups=1):
         if num_groups <= 1:
             return('horizontal_bar')
         else:
-            return('grouped_bar')
+            return('clustered_horizontal_bar')

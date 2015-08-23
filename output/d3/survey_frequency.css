@@ -71,6 +71,15 @@
   page-break-before: always;
 }
 
+/* Styles for clustered horizontal bar graphs */
+
+.clustered_hbar .axis path,
+.clustered_hbar .axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
 /* Styles for horizontal bar graphs */
 
 .hbaraxis text {
@@ -132,9 +141,8 @@ fill: #000;
 }
 
 /* Tooltip styles */
-.d3-tip {
+.d3-tip, .clustered-hbar-tip {
   line-height: 1;
-  padding: 5px;
   background: #ccc;
   color: #222;
   border-radius: 2;
@@ -143,18 +151,32 @@ fill: #000;
   font-size: 11px;
 }
 
+.clustered-hbar-tip {
+  padding:1px 5px 2px 5px;
+}
+
+.d3-tip {padding: 3px 5px;}
+
 /* Creates a small triangle extender for the tooltip */
-.d3-tip:before {
+.d3-tip:before, .clustered-hbar-tip:before {
   box-sizing: border-box;
   display: inline;
   width: 10%;
-  margin: 0 0 0 -17px;
   font-size: 15px;
   line-height: 1;
   color: #ccc;
   content: "\25C0";
-  position: absolute;
   text-align: center;
+  margin: 0 0 0 -17px;
+}
+
+.d3-tip:before {
+  position: absolute;
+}
+
+.clustered-hbar-tip:before {
+  position:relative;
+  top:2px;
 }
 
 /* Style northward tooltips differently */

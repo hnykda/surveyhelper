@@ -1,0 +1,156 @@
+<div id="chart{{index}}_group{{group}}"></div>
+<script>
+var json = JSON.parse(document.getElementById('data{{index}}_group{{group}}').innerHTML);
+var columns = json['columns']
+var index = json['index']
+var totals = json['totals']
+var vdata = []
+
+for (i=0; i<(json['data'].length); i++) {
+  l = json['data'][i]
+  l.forEach(function(e, i2) {
+    var data = {};
+    data["n"] = e;
+    data["tot"] = totals[i2]
+    if (totals[i2] == 0) 
+      {data["pct"] = 0} 
+    else {
+      data["pct"] = (e / totals[i2])*100};
+    data["ind"] = index[i]
+    data["col"] = columns[i2]
+    vdata.push(data)
+  });
+};
+
+var total_width = 745,
+    barHeight        = 20,
+    groupHeight      = barHeight * columns.length,
+    gapBetweenGroups = 10,
+    spaceForLegend   = 150,
+    legendRectSize = 18,
+    legendSpacing  = 10;
+
+var max_index_label = d3.max(index.map(function(i) {return(Math.round((i.length*4.5)+20))}));
+var max_column_label = d3.max(columns.map(function(i) {return((i.length*5)+20)}));
+var margin_left = Math.min(max_index_label, 300);
+var margin_right = Math.min(max_column_label +  legendRectSize + legendSpacing, 150);
+
+var margin = {top: 40, right: margin_right, bottom: 20, left: margin_left},
+    width = total_width - margin.left - margin.right,
+    height = index.length * ((barHeight*columns.length)+gapBetweenGroups);
+
+// Color scale
+var color = d3.scale.category20();
+// var chartHeight = barHeight * vdata.length + gapBetweenGroups * index.length;
+
+var x = d3.scale.linear()
+    .domain([0, d3.max(vdata.map(function(d) {return d.pct}))])
+    .range([0, width]);
+
+var y = d3.scale.linear()
+    .range([height + gapBetweenGroups, 0]);
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .tickFormat('')
+    .tickSize(0)
+    .orient("left");
+
+var tip = d3.tip()
+  .attr('class', 'clustered-hbar-tip')
+  .offset([0, 10])
+  .direction('e')
+  .html(function(d, i) {
+    return Math.round(d["pct"]) + "% (" + d["n"] + "/" + d["tot"] + ") of " + d["col"] + " respondents checked \"" + d["ind"] + "\"";
+  });
+
+var svg = d3.select("#chart{{index}}_group{{group}}").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .attr("class", "clustered_hbar")
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+svg.call(tip)
+
+// Create bars
+var bar = svg.selectAll("g")
+    .data(vdata)
+    .enter().append("g")
+    .attr("transform", function(d, i) {
+      return "translate(0," + (i * barHeight + gapBetweenGroups * (0.5 + Math.floor(i/columns.length))) + ")";
+    });
+
+// Create rectangles of the correct width
+bar.append("rect")
+    .style("fill", function(d,i) { return color(i % columns.length); })
+    .attr("class", "bar")
+    .attr("width", function(d,i) { return x(d["pct"]); })
+    .attr("height", barHeight - 1)
+    .attr("x", 0)
+    .on('mouseover', tip.show)
+    .on('mouseout', tip.hide);
+
+// Add text label in bar
+bar.append("text")
+    .attr("x", function(d) { return Math.max(3, x(d["pct"])-25); })
+    .attr("y", barHeight / 2)
+    .attr("dy", ".35em")
+    .text(function(d) {if(d["pct"] > 0) {return Math.round(d["pct"]) + "%"};});
+
+// Draw labels
+// bar.append("g")
+//     .attr("width", margin_left)
+//     .attr("height", barHeight*columns.length)
+bar.append("text")
+    .attr("class", "label")
+    .attr("y", groupHeight / 2)
+    .attr("dy", ".35em")
+    .style("text-anchor", "end")
+    .text(function(d,i) {
+      if (i % columns.length === 0)
+        return index[Math.floor(i/columns.length)];
+      else
+        return ""})
+    .call(wrap, margin.left-10);
+
+svg.selectAll(".wrapped_text")[0].map(
+  function(t) {
+    l = t.getAttribute("numlines");
+    var offset = (l-1)*-6
+    t.setAttribute("transform", "translate(-10," + offset + ")");
+  }
+);
+
+svg.append("g")
+      .attr("class", "y axis")
+      .attr("transform", "translate(0, " + -gapBetweenGroups/2 + ")")
+      .call(yAxis);
+
+// Draw legend
+
+var legend = svg.selectAll('.legend')
+    .data(columns)
+    .enter()
+    .append('g')
+    .attr('transform', function (d, i) {
+        var height = legendRectSize + legendSpacing;
+        var offset = -gapBetweenGroups/2;
+        var horz = width + 10;
+        var vert = i * height - offset;
+        return 'translate(' + horz + ',' + vert + ')';
+    });
+
+legend.append('rect')
+    .attr('width', legendRectSize)
+    .attr('height', legendRectSize)
+    .style('fill', function (d, i) { return color(i); })
+    .style('stroke', function (d, i) { return color(i); });
+
+legend.append('text')
+    .attr('class', 'legend')
+    .attr('x', legendRectSize + legendSpacing)
+    .attr('y', legendRectSize - legendSpacing)
+    .text(function (d) { return d; });
+
+</script>

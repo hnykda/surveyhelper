@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-<link rel="stylesheet" type="text/css" 
+<!-- <link rel="stylesheet" type="text/css" 
   href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css" 
-/>
+/> -->
 <link rel="stylesheet" href="survey_frequency.css">
 
-<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="d3.min.js"></script>
+<!-- <script src="http://d3js.org/d3.v3.min.js"></script> -->
 <script src="helpers.js"></script>
 <script src="d3-tip/index.js"></script>
 
@@ -32,6 +33,11 @@
 {% for g in groups -%}
 {% if groups|length > 1 -%}
 <h4>{{g}}</h4>
+{% endif -%}
+{% if charttype == 'clustered_horizontal_bar' -%}
+  {% with index=outer_loop.index, group = loop.index -%}
+  {% include "clustered_horizontal_bar.html" -%}
+  {% endwith -%}
 {% endif -%}
 {% if charttype == 'horizontal_bar' -%}
   {% with index=outer_loop.index, group = loop.index -%}
