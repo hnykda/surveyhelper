@@ -206,7 +206,7 @@ class SelectOneMatrixQuestion(MatrixQuestion):
             t = self.frequency_table(df, "ct", "", True, False, False, "")
             t["Question"] = t["Question"] + ":" + name
             t["sort_ind"] = t.index
-            t["sort_ind"] = t["sort_ind"] + i/10
+            t["sort_ind"] = t["sort_ind"] + i/len(gb)
             t.set_index('Question', inplace=True)
             if t.ix[:,1:-1].sum().sum() != 0:
                 tables.append(t)
@@ -432,7 +432,6 @@ class SelectOneQuestion(SelectQuestion):
             return(tbl)
 
     def cut_by_json(self, response_set):
-        q2 = response_set.codebook.questions[response_set.grouping_var]
         freq_table_options={
             "show_question":True, 
             "ct":True, 
@@ -445,10 +444,13 @@ class SelectOneQuestion(SelectQuestion):
             "mean_format":"",
             "show_values":False                         
         }
-        t = self.cut_by_question(q2, response_set, freq_table_options)
+        var = response_set.grouping_var
+        grouped = response_set.get_data()
+        group_ct = len(grouped)
+        t = self.cut_by(grouped, var, freq_table_options = freq_table_options)
         totals = t.sum(1).tolist()
         totals = [int(t) for t in totals]
-        if self.graph_type(2) == 'clustered_horizontal_bar':
+        if self.graph_type(group_ct) == 'clustered_horizontal_bar':
             t = t.T
         j = t.to_json(orient="split")
         p = json.loads(j)
@@ -495,7 +497,8 @@ class SelectOneQuestion(SelectQuestion):
         return(self.cut_by(groups, group_mapping, oth_text, freq_table_options,
                            **cut_by_options))
 
-    def cut_by(self, groups, group_label_mapping, cut_var_label, 
+    def cut_by(self, groups, cut_var_label,
+               group_label_mapping = None,
                freq_table_options = {
                 "ct":True, 
                 "pct":False,
@@ -516,7 +519,10 @@ class SelectOneQuestion(SelectQuestion):
             if len(t) > 0:
                 t.set_index("Answer", inplace=True)
                 series = t.ix[:,0]
-                series.name = group_label_mapping[k]
+                if group_label_mapping:
+                    series.name = group_label_mapping[k]
+                else:
+                    series.name = k
                 freqs.append(series)
         df = pd.DataFrame(freqs)
 
@@ -671,7 +677,6 @@ class SelectMultipleQuestion(SelectQuestion):
         return(tbl)
 
     def cut_by_json(self, response_set):
-        q2 = response_set.codebook.questions[response_set.grouping_var]
         freq_table_options={
             "show_question":True, 
             "ct":True, 
@@ -681,7 +686,9 @@ class SelectMultipleQuestion(SelectQuestion):
             "remove_exclusions":True, 
             "show_totals":True                         
         }
-        t = self.cut_by_question(q2, response_set, freq_table_options)
+        var = response_set.grouping_var
+        grouped = response_set.get_data()
+        t = self.cut_by(grouped, var, freq_table_options = freq_table_options)
         totals = t[t.columns[-1]].tolist()
         totals = [int(i) for i in totals]
         r = t.iloc[:,:-1].T.to_json(orient="split")
@@ -727,7 +734,8 @@ class SelectMultipleQuestion(SelectQuestion):
         return(self.cut_by(groups, group_mapping, oth_text, freq_table_options,
                **cut_by_options))
 
-    def cut_by(self, groups, group_label_mapping, cut_var_label,
+    def cut_by(self, groups, cut_var_label,
+               group_label_mapping = None, 
                freq_table_options={
                     "show_question":True, 
                     "ct":True, 
@@ -745,7 +753,10 @@ class SelectMultipleQuestion(SelectQuestion):
             t = (self.frequency_table(gp, **freq_table_options))
             t.set_index("Answer", inplace=True)
             series = t.ix[:,0]
-            series.name = group_label_mapping[k]
+            if group_label_mapping:
+                series.name = group_label_mapping[k]
+            else:
+                series.name = k
             freqs.append(series)
         df = pd.DataFrame(freqs)
 

@@ -29,41 +29,27 @@ class ResponseSet:
         self.matched_questions = matched_questions
         self.codebook = codebook
         self.grouping_var = grouping_var
-        self.group_dict = group_dict
-
-    def get_data(self):
-        if (not self.grouping_var and self.group_dict):
+        if (not self.grouping_var and group_dict):
             raise(Exception(
                   "Grouping variable must also be specified when a grouping dict is passed in."
                  ))
-        if (self.grouping_var and not self.group_dict):
-            raise(Exception(
-                  "Grouping dict must also be specified when a grouping variable is passed in."
-                 ))
+        if self.grouping_var:
+            self.data[grouping_var] = pd.Categorical(self.data[grouping_var])
+            if group_dict:
+                self.data[grouping_var].replace(group_dict, inplace=True)
+                self.data[grouping_var].reorder_categories(list(group_dict.values()))
 
-        if not self.grouping_var or (self.group_dict and self.grouping_var):
+
+    def get_data(self):
+        if not self.grouping_var:
             group_var = 'z'
             while group_var in self.data.columns:
                 group_var += 'z'
-            if not self.grouping_var:
-                self.data[group_var] = 0
-            else:
-                # Create a special variable to sort the data by so that groups
-                # end up in correct order
-                sort_var = group_var + "z"
-                while sort_var in self.data.columns:
-                    sort_var += 'z'
-                value_order = list(self.group_dict.keys())
-                asc = list(range(0,len(value_order)))
-                self.data[sort_var] = self.data[self.grouping_var].replace(
-                                      value_order, asc)
-                self.data.sort(sort_var, inplace=True)
-                # Then replace with labels
-                self.data[group_var] = self.data[self.grouping_var].replace(
-                                       self.group_dict)
-
+            self.data[group_var] = 0
         else:
             group_var = self.grouping_var
+            self.data.sort(group_var, inplace=True)
         groups = self.data.groupby(group_var, sort=False)
         return(groups)
-        
+
+    
