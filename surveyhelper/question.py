@@ -198,13 +198,14 @@ class SelectOneMatrixQuestion(MatrixQuestion):
             return('')
         else:
             t.set_index('Question', inplace=True)
+            t.columns = t.columns.astype(str)
             return(t.to_json(orient="split"))
 
     def grouped_freq_table_to_json(self, gb):
         tables = []
         for i, (name, df) in enumerate(gb):
             t = self.frequency_table(df, "ct", "", True, False, False, "")
-            t["Question"] = t["Question"] + ":" + name
+            t["Question"] = t["Question"] + ":" + str(name)
             t["sort_ind"] = t.index
             t["sort_ind"] = t["sort_ind"] + i/len(gb)
             t.set_index('Question', inplace=True)
@@ -216,6 +217,7 @@ class SelectOneMatrixQuestion(MatrixQuestion):
             df = pd.concat(tables)
             df.sort("sort_ind", axis=0, inplace=True)
             df.drop("sort_ind", axis=1, inplace=True)
+            df.columns = df.columns.astype(str)
             return(df.to_json(orient="split"))
 
     def graph_type(self, num_groups=1):
@@ -452,6 +454,8 @@ class SelectOneQuestion(SelectQuestion):
         totals = [int(t) for t in totals]
         if self.graph_type(group_ct) == 'clustered_horizontal_bar':
             t = t.T
+        t.index = t.index.astype(str)
+        t.columns = t.columns.astype(str)
         j = t.to_json(orient="split")
         p = json.loads(j)
         p["totals"] = totals

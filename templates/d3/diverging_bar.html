@@ -17,7 +17,7 @@ var margin_left = Math.min(max_label, 300);
 var total_width = 745;
 var margin = {top: 40, right: 15, bottom: 20, left: margin_left},
     width = total_width - margin.left - margin.right,
-    height = questions.length * 40;
+    height = questions.length * {{barheight}};
 
 var y = d3.scale.ordinal()
     .rangeRoundBands([0, height], .25);
@@ -203,7 +203,7 @@ svg.append("g")
 
 var startp = svg.append("g").attr("class", "legendbox{{index}}_group{{group}}").attr("id", "mylegendbox");
 
-item_widths = categories.map(function(c) {return (c.length * 6) + 28})
+item_widths = categories.map(function(c) {return Math.max(100, Math.min((c.length * 6) + 28, 170))})
 legend_width = item_widths.reduce(function(a, b) {return a + b})
 
 if (legend_width > total_width) {

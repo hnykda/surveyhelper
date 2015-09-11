@@ -141,8 +141,6 @@ class QsfParser:
         qids = self.get_question_order()
         qid_to_json = self.get_question_json(qids)
 
-
-
         questions = []
         for id in qids:
             json = qid_to_json[id]['Payload']
@@ -156,6 +154,8 @@ class QsfParser:
             json['Selector'] == 'Likert' and json['SubSelector'] ==
             'SingleAnswer'):
                 questions.append(self.build_mqsr(json))
+            elif json['QuestionType'] == 'Slider':
+                questions.append(self.build_slider_mqsr(json))
             elif (json['QuestionType'] == 'Matrix' and
             json['Selector'] == 'Likert' and json['SubSelector'] ==
             'MultipleAnswer'):
@@ -165,7 +165,7 @@ class QsfParser:
                 qtype = json['QuestionType']
                 select = json['Selector']
                 logging.info("Skipping question {}\n\nType: {}\nSelector: {}")
-        return(questions)
+        return([q for q in questions if q is not None])
 
     def _recode_exclusions(self, exclusions, recode):
         exclusions_rcd = {}
@@ -198,6 +198,8 @@ class QsfParser:
         """
         """
         txt_cln = QsfParser.remove_html(text)
+        if choices == []:
+            return(None)
         choices_cln = dict([(k, QsfParser.remove_html(v['Display'])) 
                            for k, v in choices.items()])
         choices_rcd = {}
@@ -258,6 +260,35 @@ class QsfParser:
                     recode, var, True, exclude)
                 questions.append(q)
         return(SelectOneMatrixQuestion(stem_text, tag, questions))
+
+    def build_slider_mqsr(self, json):
+        stem_text = QsfParser.remove_html(json['QuestionText'])
+        tag = json['DataExportTag']
+        recode = self._parse_recode_values(json)
+        exclude = self._parse_analyze_choices(json)
+
+        questions = []
+        dec = int(json["Configuration"]["NumDecimals"])
+        if dec == 0:
+            step = 1
+        else:
+            step = 1/(dec*10)
+        slide_min = json["Configuration"]["CSSliderMin"]
+        slide_max = json["Configuration"]["CSSliderMax"] + step
+        nums = list(range(slide_min, slide_max, step))
+        num_map = {}
+        for num in nums:
+            num_map[num] = {"Display" : str(num)}
+        json['Answers'] = num_map
+
+        for k in json['ChoiceOrder']:
+            q = self.build_sr_question_from_id(k, json, tag, recode, exclude)
+            questions.append(q)
+        if 'DynamicChoiceJson' in json:
+            raise(Exception("Slider questions with dynamic choices aren't handled yet"))
+        mat_q = SelectOneMatrixQuestion(stem_text, tag, questions)
+        mat_q.change_scale('ordinal')
+        return(mat_q)
 
     def build_mr_question(self, text, label, choices, recode, var_base,
         provides_int, exclusions):

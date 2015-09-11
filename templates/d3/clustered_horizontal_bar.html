@@ -61,7 +61,7 @@ var tip = d3.tip()
   .offset([0, 10])
   .direction('e')
   .html(function(d, i) {
-    return Math.round(d["pct"]) + "% (" + d["n"] + "/" + d["tot"] + ") of " + d["col"] + " respondents checked \"" + d["ind"] + "\"";
+    return Math.round(d["pct"]) + "% (" + d["n"] + "/" + d["tot"] + ") of " + d["col"] + " respondents selected \"" + d["ind"] + "\"";
   });
 
 var svg = d3.select("#chart{{index}}_group{{group}}").append("svg")

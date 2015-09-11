@@ -25,7 +25,7 @@ questions.forEach(function(q) {
   }
 })
 
-var height = questions.length * 40;
+var height = questions.length * {{barheight}};
 var max_label = d3.max(questions.map(function(q) {return((q.length*5)+20)}));
 var max_group_label = d3.max(groups.map(function(q) {return((q.length*5)+20)}));
 
@@ -268,7 +268,7 @@ svg.append("g")
 
 var startp = svg.append("g").attr("class", "legendbox{{index}}_group{{group}}").attr("id", "mylegendbox");
 
-item_widths = categories.map(function(c) {return (c.length * 6) + 28})
+item_widths = categories.map(function(c) {return Math.max(100, Math.min((c.length * 6) + 28, 170))})
 legend_width = item_widths.reduce(function(a, b) {return a + b})
 
 if (legend_width > total_width) {

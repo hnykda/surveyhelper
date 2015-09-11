@@ -1,5 +1,4 @@
 <svg class="chart{{index}}_group{{group}}"></svg>
-
 <script>
 var json = JSON.parse(document.getElementById('data{{index}}_group{{group}}').innerHTML);
 var num_data = json['data'];
@@ -16,7 +15,7 @@ var max_label = d3.max(label_lengths);
 var margin_left = Math.min(max_label, 300);
 
 var margin_bottom = 30;
-var total_height = (y.domain().length * 40) + margin_bottom;
+var total_height = (y.domain().length * {{barheight}}) + margin_bottom;
 var total_width = 460 + margin_left;
 
 

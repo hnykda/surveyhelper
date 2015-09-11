@@ -11,7 +11,7 @@
 <script src="helpers.js"></script>
 <script src="d3-tip/index.js"></script>
 
-{% for title, table, jsondata, groups, charttype, midpoint in questions -%}
+{% for title, table, jsondata, groups, charttype, midpoint, barheight in questions -%}
 {% set outer_loop = loop -%}
 {% for d in jsondata -%}
 <script type="application/json" id="data{{outer_loop.index}}_group{{loop.index}}">
@@ -27,20 +27,20 @@
 <div class="content">
 <h1 class="center">{{survey_title}}</h1>
 
-{% for title, table, jsondata, groups, charttype, midpoint in questions -%}
+{% for title, table, jsondata, groups, charttype, midpoint, barheight in questions -%}
 <h3>{{title}}</h3>
 {% set outer_loop = loop -%}
 {% for g in groups -%}
-{% if groups|length > 1 -%}
+{% if groups|length > 1 and charttype != 'clustered_horizontal_bar' -%}
 <h4>{{g}}</h4>
 {% endif -%}
 {% if charttype == 'clustered_horizontal_bar' -%}
-  {% with index=outer_loop.index, group = loop.index -%}
+  {% with index=outer_loop.index, group = loop.index, barheight = barheight -%}
   {% include "clustered_horizontal_bar.html" -%}
   {% endwith -%}
 {% endif -%}
 {% if charttype == 'horizontal_bar' -%}
-  {% with index=outer_loop.index, group = loop.index -%}
+  {% with index=outer_loop.index, group = loop.index, barheight = barheight -%}
   {% include "horizontal_bar.html" -%}
   {% endwith -%}
 {% endif -%}
@@ -50,7 +50,7 @@
   {% else -%}
     {% set diverging=False -%}
   {% endif -%}
-  {% with index=outer_loop.index, group = loop.index, diverging=diverging -%}
+  {% with index=outer_loop.index, group = loop.index, diverging=diverging, barheight = barheight -%}
   {% include "grouped_diverging_bar.html" -%}
   {% endwith -%}
 {% endif -%}
@@ -60,7 +60,7 @@
   {% else -%}
     {% set diverging=False -%}
   {% endif -%}
-  {% with index=outer_loop.index, group = loop.index, diverging=diverging -%}
+  {% with index=outer_loop.index, group = loop.index, diverging=diverging, barheight = barheight -%}
   {% include "diverging_bar.html" %}
   {% endwith -%}
 {% endif -%}
