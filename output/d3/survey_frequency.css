@@ -67,8 +67,9 @@
   width: 100%;
 }
 
-.break { 
-  page-break-before: always;
+.pagebreak { 
+  /*Uncomment to create a page break after each question when printing*/
+  /*page-break-after: always;*/
 }
 
 /* Styles for clustered horizontal bar graphs */
