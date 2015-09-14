@@ -570,8 +570,19 @@ class SelectOneQuestion(SelectQuestion):
             return(False)
 
     def freq_table_to_json(self, df):
-        t = self.frequency_table(df, True, True, True, ".9f", True, False, 
-                                 True, False, ".1f", False)
+        t = self.frequency_table(df, 
+                                 show_question=True,
+                                 ct=True,
+                                 pct=True,
+                                 pct_format=".9f",
+                                 remove_exclusions=True,
+                                 show_totals=False,
+                                 remove_zero_totals=True,
+                                 show_mean=False,
+                                 mean_format=".1f",
+                                 show_values=False)
+        if len(t) == 0:
+            return(None)
         t.columns = ["category", "count", "pct"]
         t.set_index('category', inplace=True)
         return(t.to_json(orient="split"))
