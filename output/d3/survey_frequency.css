@@ -127,9 +127,9 @@ fill: #000;
   fill: #999;
 }
 
-.y.dbaraxis path {
+/*.y.dbaraxis path {
   display: none;
-}
+}*/
 
 .truezero line {
   fill: none;
@@ -137,9 +137,9 @@ fill: #000;
   shape-rendering: crispEdges;
 }
 
-.y.dbaraxis .tick line {
+/*.y.dbaraxis .tick line {
   display: none;
-}
+}*/
 
 /* Tooltip styles */
 .d3-tip, .clustered-hbar-tip {

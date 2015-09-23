@@ -22,8 +22,8 @@ class FrequencyReport:
         self.report_title = cfg['report_data']['title']
         self.response_set = response_set
 
-    def create_report(self, 
-                      report_title="Placeholder Title"):
+    def create_report(self,
+                      sort_by_mean=False):
         env = Environment(loader=FileSystemLoader(self.template_dir),
                   extensions=['jinja2.ext.with_'])
         template = env.get_template(self.freq_template)
@@ -33,17 +33,19 @@ class FrequencyReport:
         data_groups = self.response_set.get_data()
 
         if len(data_groups) > 1:
-            questions = self.grouped_questions_data(matched_questions, data_groups)
+            questions = self.grouped_questions_data(matched_questions, 
+                                                    data_groups, sort_by_mean)
         else:
             questions = self.ungrouped_questions_data(matched_questions, 
-                                                      self.response_set.data)
+                                                      self.response_set.data,
+                                                      sort_by_mean)
         t = template.render(count=len(self.response_set.data),
-                            survey_title=report_title,
+                            survey_title=self.report_title,
                             questions=questions)
         outfile.write(unidecode(t))
 
 
-    def ungrouped_questions_data(self, matched_questions, data):
+    def ungrouped_questions_data(self, matched_questions, data, sort_by_mean):
         questions = []
         for q in matched_questions:
             scale = q.get_scale()
@@ -55,7 +57,7 @@ class FrequencyReport:
             # If this is a matrix question with more than 7 choices, split it
             # into multiple questions
             if (isinstance(q, SelectOneMatrixQuestion) and len(q.get_scale().choices) > 7):
-                barheight = math.floor(min(800 / len(q.get_scale().choices), 35))
+                barheight = math.floor(min(800 / len(q.get_scale().choices), 30))
                 for s in q.questions:
                     table = s.freq_table_to_json(data)
                     group_names = ['']
@@ -83,7 +85,8 @@ class FrequencyReport:
                     ))
         return(questions)
 
-    def grouped_questions_data(self, matched_questions, data_groups):
+    def grouped_questions_data(self, matched_questions, data_groups, 
+                               sort_by_mean):
         questions = []
         for q in matched_questions:
             scale = q.get_scale()
@@ -97,7 +100,8 @@ class FrequencyReport:
             if isinstance(q, SelectOneMatrixQuestion) and ((len(data_groups) * 
                 len(q.questions)) > 36):
                 for sub_q in q.questions:
-                    table = sub_q.cut_by_json(self.response_set)
+                    table = sub_q.cut_by_json(self.response_set, 
+                                              sort_by_mean=sort_by_mean)
                     text = "{} &mdash; {}".format(q.text, sub_q.text)
                     questions.append((
                         text,
@@ -111,9 +115,9 @@ class FrequencyReport:
             # If this is a matrix question with more than 7 answer choices, split it
             # into multiple questions
             elif (isinstance(q, SelectOneMatrixQuestion) and len(q.get_scale().choices) > 7):
-                barheight = math.floor(min(800 / len(q.get_scale().choices), 35))
+                barheight = math.floor(min(800 / len(q.get_scale().choices), 30))
                 for s in q.questions:
-                    table = s.cut_by_json(self.response_set)
+                    table = s.cut_by_json(self.response_set, sort_by_mean=sort_by_mean)
                     group_names = [n for n, df in data_groups]
                     text = "{} &mdash; {}".format(q.text, s.text)
                     questions.append((
@@ -142,7 +146,7 @@ class FrequencyReport:
                                 group_names,
                                 q.graph_type(1),
                                 midpoint,
-                                30
+                                22
                 ))
             else:
                 freq_tables = []
@@ -156,14 +160,14 @@ class FrequencyReport:
                         freq_tables.append(j)
                         freq_table_json.append(j)
                         group_names.append('')
-                    barheight = math.floor(min(800 / ((len(data_groups) * len(q.questions))), 35))
+                    barheight = math.floor(min(800 / ((len(data_groups) * len(q.questions))), 30))
                 # Select question with some cut variable
                 elif isinstance(q, SelectQuestion):
-                    table = q.cut_by_json(self.response_set)
+                    table = q.cut_by_json(self.response_set, sort_by_mean=sort_by_mean)
                     freq_tables.append(table)
                     freq_table_json.append(table)
                     group_names.append('')
-                    barheight = math.floor(min(800 / len(data_groups), 35))
+                    barheight = math.floor(min(800 / len(data_groups), 30))
 
                 questions.append((
                                 q.text,

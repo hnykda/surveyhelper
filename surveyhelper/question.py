@@ -433,7 +433,7 @@ class SelectOneQuestion(SelectQuestion):
                 tbl.loc[len(tbl)] = mean
             return(tbl)
 
-    def cut_by_json(self, response_set):
+    def cut_by_json(self, response_set, sort_by_mean=False):
         freq_table_options={
             "show_question":True, 
             "ct":True, 
@@ -442,14 +442,18 @@ class SelectOneQuestion(SelectQuestion):
             "remove_exclusions":True, 
             "show_totals":False,
             "remove_zero_totals":True,
-            "show_mean":False,
-            "mean_format":"",
+            "show_mean":True,
+            "mean_format":"10",
             "show_values":False                         
         }
         var = response_set.grouping_var
         grouped = response_set.get_data()
         group_ct = len(grouped)
         t = self.cut_by(grouped, var, freq_table_options = freq_table_options)
+        if sort_by_mean:
+            t["Mean"] = t["Mean"].astype(float)
+            t.sort(['Mean'], ascending=[0], inplace=True)
+        t.drop('Mean', axis=1, inplace=True)
         totals = t.sum(1).tolist()
         totals = [int(t) for t in totals]
         if self.graph_type(group_ct) == 'clustered_horizontal_bar':
@@ -691,7 +695,7 @@ class SelectMultipleQuestion(SelectQuestion):
             tbl.loc[len(tbl)] = tots
         return(tbl)
 
-    def cut_by_json(self, response_set):
+    def cut_by_json(self, response_set, sort_by_mean=False):
         freq_table_options={
             "show_question":True, 
             "ct":True, 
