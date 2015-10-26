@@ -33,11 +33,21 @@ class ResponseSet:
             raise(Exception(
                   "Grouping variable must also be specified when a grouping dict is passed in."
                  ))
-        if self.grouping_var:
+        if self.grouping_var and not group_dict:
             self.data[grouping_var] = pd.Categorical(self.data[grouping_var])
-            if group_dict:
-                self.data[grouping_var].replace(group_dict, inplace=True)
-                self.data[grouping_var].reorder_categories(list(group_dict.values()))
+        if self.grouping_var and group_dict:
+                self.data[grouping_var] = self.data[grouping_var].astype(str)
+                # For some odd reason, inplace=True doesn't work when cats are ["1-2", "3+"]
+                self.data[grouping_var] = self.data[grouping_var].replace(group_dict)
+                self.data[grouping_var] = pd.Categorical(self.data[grouping_var])
+                self.data[grouping_var] = self.data[grouping_var].cat.reorder_categories(self.uniq(list(group_dict.values())))
+
+    def uniq(self, input):
+        output = []
+        for x in input:
+            if x not in output:
+                output.append(x)
+        return(output)
 
 
     def get_data(self):
@@ -48,8 +58,8 @@ class ResponseSet:
             self.data[group_var] = 0
         else:
             group_var = self.grouping_var
-            self.data.sort(group_var, inplace=True)
-        groups = self.data.groupby(group_var, sort=False)
+            # self.data.sort(group_var, inplace=True)
+        groups = self.data.groupby(group_var)
         return(groups)
 
     

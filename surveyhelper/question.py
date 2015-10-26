@@ -166,9 +166,13 @@ class SelectOneMatrixQuestion(MatrixQuestion):
         oth_text = cut_var_label
         if not oth_text:
             oth_text = other_question.text
-        return(self.cut_by(groups, group_mapping, oth_text, question_labels,
-               pct_format, remove_exclusions, remove_zero_totals, show_mean, 
-               mean_format))
+        return(self.cut_by(groups, group_mapping, oth_text, 
+                           question_labels=question_labels,
+                           pct_format=pct_format,
+                           remove_exclusions=remove_exclusions,
+                           remove_zero_totals=remove_zero_totals,
+                           show_mean=show_mean, 
+                           mean_format=mean_format))
 
     def cut_by(self, groups, group_label_mapping, cut_var_label, 
                question_labels=None, 
@@ -177,17 +181,24 @@ class SelectOneMatrixQuestion(MatrixQuestion):
                remove_zero_totals=True, 
                show_mean=True,
                mean_format=".1f"):
-
         results = []
         labels = question_labels
         if not labels:
             labels = [q.text for q in self.questions]
         for q, l in zip(self.questions, labels):
-            r = q.cut_by(groups, group_label_mapping, cut_var_label,
-                         l, pct_format, remove_exclusions, remove_zero_totals,
-                         show_mean, mean_format)
-            # r.columns = pd.MultiIndex.from_tuples([(q.text, b) for a, b in 
-            #             r.columns.tolist()])
+            r = q.cut_by(groups, cut_var_label, 
+                         group_label_mapping = group_label_mapping,
+                         freq_table_options={
+                            "ct":True, 
+                            "pct":False,
+                            "pct_format": pct_format, 
+                            "remove_exclusions": remove_exclusions, 
+                            "show_totals":False,
+                            "remove_zero_totals": remove_zero_totals,
+                            "show_mean": show_mean,
+                            "mean_format": mean_format,
+                            "show_values":False                         
+                         })
             results.append(r.T)
         return(pd.concat(results))
 
@@ -201,22 +212,37 @@ class SelectOneMatrixQuestion(MatrixQuestion):
             t.columns = t.columns.astype(str)
             return(t.to_json(orient="split"))
 
-    def grouped_freq_table_to_json(self, gb):
+    def cut_by_json(self, rs, mark_sig_diffs=False, sort_by_mean=False):
         tables = []
-        for i, (name, df) in enumerate(gb):
-            t = self.frequency_table(df, "ct", "", True, False, False, "")
-            t["Question"] = t["Question"] + ":" + str(name)
-            t["sort_ind"] = t.index
-            t["sort_ind"] = t["sort_ind"] + i/len(gb)
-            t.set_index('Question', inplace=True)
+        data = rs.get_data()
+        group_var = rs.grouping_var
+        for q in self.questions:
+            t = q.cut_by(data, group_var, 
+                freq_table_options={"show_question":True, 
+                                    "ct":True, 
+                                    "pct":False,
+                                    "pct_format":"", 
+                                    "remove_exclusions":True, 
+                                    "show_totals":False,
+                                    "remove_zero_totals":True,
+                                    "show_mean":True,
+                                    "mean_format":"10",
+                                    "show_values":False                         
+                                   })
+            meancol = "Mean"
+            suffix = ""
+            if "Mean*" in t.columns:
+                suffix = '*'
+                meancol = meancol + suffix
+            if mark_sig_diffs:
+                t.index = [q.text + ":" + str(i) + suffix for i in t.index]
+            t.drop(meancol, axis=1, inplace=True)
             if t.ix[:,1:-1].sum().sum() != 0:
                 tables.append(t)
-        if len(tables) == 0:
+        if len(tables)==0:
             return('')
         else:
             df = pd.concat(tables)
-            df.sort("sort_ind", axis=0, inplace=True)
-            df.drop("sort_ind", axis=1, inplace=True)
             df.columns = df.columns.astype(str)
             return(df.to_json(orient="split"))
 
@@ -433,7 +459,9 @@ class SelectOneQuestion(SelectQuestion):
                 tbl.loc[len(tbl)] = mean
             return(tbl)
 
-    def cut_by_json(self, response_set, sort_by_mean=False):
+    def cut_by_json(self, response_set, 
+                    sort_by_mean=False, 
+                    mark_sig_diffs=False):
         freq_table_options={
             "show_question":True, 
             "ct":True, 
@@ -450,10 +478,15 @@ class SelectOneQuestion(SelectQuestion):
         grouped = response_set.get_data()
         group_ct = len(grouped)
         t = self.cut_by(grouped, var, freq_table_options = freq_table_options)
+        meancol = "Mean"
+        if meancol not in t.columns:
+            meancol = "Mean*"
+            if mark_sig_diffs:
+                t.index=[i + "*" for i in t.index]
         if sort_by_mean:
-            t["Mean"] = t["Mean"].astype(float)
-            t.sort(['Mean'], ascending=[0], inplace=True)
-        t.drop('Mean', axis=1, inplace=True)
+            t[meancol] = t[meancol].astype(float)
+            t.sort([meancol], ascending=[0], inplace=True)
+        t.drop(meancol, axis=1, inplace=True)
         totals = t.sum(1).tolist()
         totals = [int(t) for t in totals]
         if self.graph_type(group_ct) == 'clustered_horizontal_bar':
@@ -566,7 +599,7 @@ class SelectOneQuestion(SelectQuestion):
         if len(groupby) == 2:
             ts, ps = ttest_ind(*data, equal_var=False)
             return(ps < pval)
-        elif len(groupby.groups.keys()) == 2:
+        elif len(groupby.groups.keys()) >= 2:
             # ANOVA
             f, p = f_oneway(*data)
             return(p < .05)
@@ -682,11 +715,17 @@ class SelectMultipleQuestion(SelectQuestion):
             cols.append("Count")
             tots.append(resp)
         if pct_respondents:
-            data.append([format(x/resp, pct_format) for x in cts])
+            if resp > 0:
+                data.append([format(x/resp, pct_format) for x in cts])
+            else:
+                data.append(["-" for x in cts])
             cols.append("% of respondents")
             tots.append("")
         if pct_responses:
-            data.append([format(x/sum(cts), pct_format) for x in cts])
+            if sum(cts) > 0:
+                data.append([format(x/sum(cts), pct_format) for x in cts])
+            else:
+                data.append(["-" for x in cts])
             cols.append("% of responses")
             tots.append("")
         tbl = pd.DataFrame(data).T
@@ -695,7 +734,9 @@ class SelectMultipleQuestion(SelectQuestion):
             tbl.loc[len(tbl)] = tots
         return(tbl)
 
-    def cut_by_json(self, response_set, sort_by_mean=False):
+    def cut_by_json(self, response_set, 
+                    sort_by_mean=False, 
+                    mark_sig_diffs=False):
         freq_table_options={
             "show_question":True, 
             "ct":True, 

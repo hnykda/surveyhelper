@@ -13,7 +13,9 @@ var yaxis_map = {}
 var groups = {}
 questions.forEach(function(q) {
   yaxis_map[q] = q.split(":").pop()
-  groups[q.split(":").pop()] = 1
+  g = q.split(":").pop()
+  if (g.substr(g.length - 1) == "*") {g = g.substring(0,g.length-1)};
+  groups[g] = 1
 })
 groups = Object.keys(groups)
 

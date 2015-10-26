@@ -23,7 +23,8 @@ class FrequencyReport:
         self.response_set = response_set
 
     def create_report(self,
-                      sort_by_mean=False):
+                      sort_by_mean=False,
+                      mark_sig_diffs=False):
         env = Environment(loader=FileSystemLoader(self.template_dir),
                   extensions=['jinja2.ext.with_'])
         template = env.get_template(self.freq_template)
@@ -34,7 +35,9 @@ class FrequencyReport:
 
         if len(data_groups) > 1:
             questions = self.grouped_questions_data(matched_questions, 
-                                                    data_groups, sort_by_mean)
+                                                    data_groups, 
+                                                    sort_by_mean,
+                                                    mark_sig_diffs)
         else:
             questions = self.ungrouped_questions_data(matched_questions, 
                                                       self.response_set.data,
@@ -86,7 +89,7 @@ class FrequencyReport:
         return(questions)
 
     def grouped_questions_data(self, matched_questions, data_groups, 
-                               sort_by_mean):
+                               sort_by_mean, mark_sig_diffs):
         questions = []
         for q in matched_questions:
             scale = q.get_scale()
@@ -101,7 +104,8 @@ class FrequencyReport:
                 len(q.questions)) > 36):
                 for sub_q in q.questions:
                     table = sub_q.cut_by_json(self.response_set, 
-                                              sort_by_mean=sort_by_mean)
+                                              sort_by_mean=sort_by_mean,
+                                              mark_sig_diffs=mark_sig_diffs)
                     text = "{} &mdash; {}".format(q.text, sub_q.text)
                     questions.append((
                         text,
@@ -117,7 +121,9 @@ class FrequencyReport:
             elif (isinstance(q, SelectOneMatrixQuestion) and len(q.get_scale().choices) > 7):
                 barheight = math.floor(min(800 / len(q.get_scale().choices), 30))
                 for s in q.questions:
-                    table = s.cut_by_json(self.response_set, sort_by_mean=sort_by_mean)
+                    table = s.cut_by_json(self.response_set, 
+                                          sort_by_mean=sort_by_mean,
+                                          mark_sig_diffs=mark_sig_diffs)
                     group_names = [n for n, df in data_groups]
                     text = "{} &mdash; {}".format(q.text, s.text)
                     questions.append((
@@ -155,7 +161,9 @@ class FrequencyReport:
                 # Matrix question (potentially with groups) that doesn't need
                 # to be split apart
                 if isinstance(q, SelectOneMatrixQuestion):
-                    j = q.grouped_freq_table_to_json(data_groups)
+                    j = q.cut_by_json(self.response_set, 
+                                      sort_by_mean=sort_by_mean,
+                                      mark_sig_diffs=mark_sig_diffs)
                     if j != '':
                         freq_tables.append(j)
                         freq_table_json.append(j)
@@ -163,7 +171,9 @@ class FrequencyReport:
                     barheight = math.floor(min(800 / ((len(data_groups) * len(q.questions))), 30))
                 # Select question with some cut variable
                 elif isinstance(q, SelectQuestion):
-                    table = q.cut_by_json(self.response_set, sort_by_mean=sort_by_mean)
+                    table = q.cut_by_json(self.response_set, 
+                                          sort_by_mean=sort_by_mean,
+                                          mark_sig_diffs=mark_sig_diffs)
                     freq_tables.append(table)
                     freq_table_json.append(table)
                     group_names.append('')
