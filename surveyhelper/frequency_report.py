@@ -168,7 +168,7 @@ class FrequencyReport:
                         freq_tables.append(j)
                         freq_table_json.append(j)
                         group_names.append('')
-                    barheight = math.floor(min(800 / ((len(data_groups) * len(q.questions))), 30))
+                    barheight = math.floor(min(800 / ((len(data_groups) * len(q.questions))), 40))
                 # Select question with some cut variable
                 elif isinstance(q, SelectQuestion):
                     table = q.cut_by_json(self.response_set, 
@@ -177,7 +177,7 @@ class FrequencyReport:
                     freq_tables.append(table)
                     freq_table_json.append(table)
                     group_names.append('')
-                    barheight = math.floor(min(800 / len(data_groups), 30))
+                    barheight = math.floor(min(800 / len(data_groups), 40))
 
                 questions.append((
                                 q.text,
