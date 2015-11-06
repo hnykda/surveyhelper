@@ -1,5 +1,15 @@
 SurveyHelper
+============
+
+Installation
 ------------
+
+Please note that this package is only available for Python 3.::
+
+    pip install surveyhelper
+
+Overview
+--------
 
 SurveyHelper is a Python 3 package currently under development. It will 
 provide utilities for analyzing and visualizing survey data. It is 
