@@ -1,5 +1,3 @@
-import os
-os.chdir("/Users/cwade/projects/test/surveyhelper/")
 import surveyhelper as sh
 
 p = sh.QsfParser("sample_input_files/Sample_Senior_Survey.qsf")
