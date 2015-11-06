@@ -4,7 +4,9 @@ SurveyHelper
 Installation
 ------------
 
-Please note that this package is only available for Python 3.:
+Please note that this package is only available for Python 3.
+
+::
 
     pip install surveyhelper
 
