@@ -5,7 +5,7 @@ def readme():
 		return(f.read())
 
 setup(name='surveyhelper',
-	  version='0.1',
+	  version='0.1.1.dev1',
 	  description="Survey package for reporting on survey data from Qualtrics.",
 	  url="http://github.com/cwade/surveyhelper",
 	  author="cwade",
