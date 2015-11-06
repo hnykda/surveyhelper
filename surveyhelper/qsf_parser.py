@@ -21,7 +21,7 @@ class QsfParser:
 
     @staticmethod
     def remove_html(text):
-        soup = BeautifulSoup(text)
+        soup = BeautifulSoup(text, "html.parser")
         [s.extract() for s in soup('style')]
         return(soup.get_text().strip())
 
