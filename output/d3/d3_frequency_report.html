@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!-- <link rel="stylesheet" type="text/css" 
+  href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css" 
+/> -->
+<link rel="stylesheet" href="survey_frequency.css">
+
+<script src="d3.min.js"></script>
+<!-- <script src="http://d3js.org/d3.v3.min.js"></script> -->
+<script src="helpers.js"></script>
+<script src="d3-tip/index.js"></script>
+
+<script type="application/json" id="data1_group1">
+    {"columns":["count","pct"],"index":["Very Dissatisfied","Generally Dissatisfied","Ambivalent","Generally Satisfied","Very Satisfied"],"data":[[10,"0.090909091"],[10,"0.090909091"],[10,"0.090909091"],[40,"0.363636364"],[40,"0.363636364"]]}
+</script>
+<script type="application/json" id="data2_group1">
+    {"columns":["Very Dissatisfied","Generally Dissatisfied","Generally Satisfied","Very Satisfied"],"index":["Level of intellectual excitement on campus","Overall quality of instruction","Opportunities to participate in extracurricular activities","Social life on campus","Opportunities for personal growth and development"],"data":[[10,20,60,20],[0,10,60,40],[0,20,60,30],[10,20,60,20],[0,10,60,40]]}
+</script>
+<script type="application/json" id="data3_group1">
+    {"columns":["Very Dissatisfied","Generally Dissatisfied","Generally Satisfied","Very Satisfied","Not Applicable"],"index":["Academic advising before declaring a major","Out-of-class availability of faculty","Opportunities to participate in research with a faculty member","Availability of academic support and assistance","Availability of courses you wanted to take outside your major","Quality of instruction in humanities and arts courses","Quality of instruction in natural science and math courses","Quality of instruction in social science courses","Quality of instruction in pre-med courses"],"data":[[0,20,40,50,0],[0,20,10,80,0],[0,30,20,40,20],[0,10,40,60,0],[10,10,20,60,0],[10,30,0,60,10],[10,30,30,40,0],[10,10,30,60,0],[10,10,10,30,50]]}
+</script>
+<script type="application/json" id="data4_group1">
+    {"columns":["count","pct"],"index":["Working for pay full-time (including self-employment)","Working for pay part-time","Starting my own company or organization","Attending graduate or professional school full-time","Attending graduate or professional school part-time","Enrolled in some other education program (such as completing your current degree or a post-baccalaureate program)","Other"],"data":[[50,"0.454545455"],[20,"0.181818182"],[20,"0.181818182"],[20,"0.181818182"],[20,"0.181818182"],[10,"0.090909091"],[10,"0.090909091"]]}
+</script>
+<body>
+
+<title>Sample Senior Survey</title>
+
+
+<div class="content">
+<h1 class="center">Sample Senior Survey</h1>
+
+<h3>Overall, how satisfied with your undergraduate education?</h3>
+<div class="pagebreak">
+<svg class="chart1_group1"></svg>
+<script>
+var json = JSON.parse(document.getElementById('data1_group1').innerHTML);
+var num_data = json['data'];
+var labels = json['index'];
+var x = d3.scale.linear();   
+var y = d3.scale.ordinal();
+
+x.domain([0, d3.max(num_data.map(function(d) { return d[0]; }))]);
+y.domain(labels);
+
+
+var label_lengths = labels.map(function(d) {return (d.length * 5) + 20});
+var max_label = d3.max(label_lengths);
+var margin_left = Math.min(max_label, 300);
+
+var margin_bottom = 30;
+var total_height = (y.domain().length * 40) + margin_bottom;
+var total_width = 460 + margin_left;
+
+
+var margin = {top: 0, right: 15, bottom: 30, left: margin_left},
+    width = total_width - margin.left - margin.right,
+    height = total_height - margin.top - margin.bottom;
+x.range([0, width]);
+y.rangeRoundBands([0, height], .25);
+
+num_data.forEach(function(n, i) {
+    n["count"] = n[0];
+    n["pct"] = n[1];
+    n["label"] = labels[i];
+});
+
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left");
+
+var tip = d3.tip()
+  .attr('class', 'd3-tip')
+  .offset([0, 10])
+  .direction('e')
+  .html(function(d) {
+    return d.label + " (n = " + d.count + ")";
+  })
+
+var chart = d3.select(".chart1_group1")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+chart.call(tip)
+
+chart.append("g")
+    .attr("class", "y hbaraxis")
+    .call(yAxis)
+  .selectAll(".tick text")
+    .call(wrap, margin.left - 10);
+
+// .attr("transform", "translate(-10,0)")
+chart.selectAll(".wrapped_text")[0].map(
+  function(t) {
+    l = t.getAttribute("numlines");
+    var offset = (l-1)*-6
+    t.setAttribute("transform", "translate(-10," + offset + ")");
+  }
+);
+
+chart.append("g")
+    .attr("class", "x hbaraxis")
+    .attr("transform", "translate(0," + height + ")")
+    .call(xAxis);
+
+var bar = chart.selectAll(".hbar")
+    .data(num_data)
+  .enter()
+    .append("g")
+    .attr("class", "hbar")
+    .attr("transform", function(d, i) { 
+        return "translate(0," + y(d.label) + ")"; 
+    });
+
+bar.append("rect")
+    .attr("width", function(d) {
+        return x(d.count);
+    })
+    .attr("height", y.rangeBand())
+    .on('mouseover', tip.show)
+    .on('mouseout', tip.hide);
+
+bar.append("text")
+    .attr("x", function(d) {return(Math.max(0, x(d.count) - 25));})
+    .attr("y", function(d) { return y.rangeBand() * .67 ; })
+    .text(function(d) {return Math.round(d.pct*100) + "%"});
+
+</script></div>
+<h3>Thinking about your entire undergraduate experience, how satisfied are you with each of the following?</h3>
+<div class="pagebreak">
+<div id="chart2_group1"></div>
+
+<script>
+
+var json = JSON.parse(document.getElementById('data2_group1').innerHTML);
+var categories = json['columns'];
+var numcat = categories.length;
+
+var questions = json['index'];
+var qct = questions.length;
+
+var data = json['data'];
+
+var max_label = d3.max(questions.map(function(q) {return((q.length*5)+20)}));
+var margin_left = Math.min(max_label, 300);
+
+var total_width = 745;
+var margin = {top: 40, right: 15, bottom: 20, left: margin_left},
+    width = total_width - margin.left - margin.right,
+    height = questions.length * 40;
+
+var y = d3.scale.ordinal()
+    .rangeRoundBands([0, height], .25);
+
+var x = d3.scale.linear()
+    .rangeRound([0, width]);
+
+// TODO: do a better job of this
+var colors = ["#FF9147", "#FFAA7A", "#cccccc", "#92c6db", "#086fad"]
+if (numcat == 4) {
+  colors = [colors[0], colors[1], colors[3], colors[4]];
+} else if (numcat == 3) {
+  colors = [colors[0], colors[2], colors[4]];
+} else if (numcat == 2) {
+  colors = [colors[1], colors[3]]
+}
+
+var color = d3.scale.ordinal()
+    .range(colors);
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left")
+
+var tip = d3.tip()
+  .attr('class', 'd3-tip')
+  .offset([0, 10])
+  .direction('e')
+  .html(function(d) {
+    return d.name + " " + Math.round(d.pct) + "% (n = " + d.n + ")";
+  })
+
+var svg = d3.select("#chart2_group1").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .attr("id", "d3-plot")
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+svg.call(tip)
+  
+color.domain(categories);
+
+var counter = 0;
+data.forEach(function(d) {
+  // calc percentages
+  var tot = d.reduce(function(i, j, index, array) {
+    return i + j;
+  });
+
+  categories.forEach(function(c, i) {
+      d[c + "_N"] = d[i];
+            if (tot == 0) {
+        d[c + "_pct"] = 0
+        d[c] = 0
+      }
+      else {
+        d[c + "_pct"] = (d[i]/tot) * 100
+        d[c] = (d[i]/tot) * 100
+      };
+  });
+
+  // x0 = left offset of box relative to 0
+  // x1 = right offset of box relative to 0
+  // N = total for this question
+  // n = total for this box
+  // pct = pct of total for this box
+  var x0 = 0;
+  
+  for (i = 0; i < Math.floor(2.0); i++) {
+      x0 += d[categories[i]]
+  };
+
+  if ((2.0 % 1) != 0) {
+      var ind = Math.floor(2.0)
+      var fraction = 2.0 % 1
+      x0 += (d[categories[ind]] * fraction)
+  };
+  if (x0 != 0) {x0 = -1 * x0;};
+  
+  var idx = -1;
+  d['i'] = counter;
+  counter += 1;
+  d.boxes = color.domain().map(function(cat) { 
+      return {name: cat, 
+              x0: x0, 
+              x1: x0 += d[cat], 
+              N: tot,
+              n: d[categories[idx += 1] + "_N"],
+              pct: d[categories[idx] + "_pct"]}; 
+  });
+});
+
+var min_val = d3.min(data, function(d) { return d.boxes[0].x0; });
+var max_val = d3.max(data, function(d) { return d.boxes[numcat-1].x1;});
+
+x.domain([min_val, max_val]).nice();
+y.domain(questions);
+
+svg.append("g")
+  .attr("class", "x dbaraxis")
+  .call(xAxis)
+  .attr("transform", "translate(0," + height + ")");
+
+svg.append("g")
+  .attr("class", "y dbaraxis")
+  .call(yAxis)
+.selectAll(".tick text")
+  .call(wrap, margin.left-10);
+
+svg.selectAll(".wrapped_text")[0].map(
+  function(t) {
+    l = t.getAttribute("numlines");
+    var offset = (l-1)*-6
+    t.setAttribute("transform", "translate(-10," + offset + ")");
+  }
+);
+
+var qs = svg.selectAll(".question2_group1")
+  .data(data)
+.enter().append("g")
+  .attr("class", "bar")
+  .attr("transform", 
+    function(d) { 
+        return "translate(0," + y(questions[d.i]) + ")"; 
+    }
+  );
+
+var bars = qs.selectAll("rect")
+  .data(function(d) { return d.boxes; })
+.enter().append("g").attr("class", "subbar");
+
+bars.append("rect")
+  .attr("height", y.rangeBand())
+  .attr("x", function(d) {
+    return x(d.x0); 
+  })
+  .attr("width", function(d) { return x(d.x1) - x(d.x0); })
+  .style("fill", function(d) { return color(d.name); })
+  .on('mouseover', tip.show)
+  .on('mouseout', tip.hide);
+
+// How big does n have to be to be less than 15 px?
+var min_pct = ((x.domain()[1]-x.domain()[0])*15)/width
+
+// Label each bar segment with the percentage
+bars.append("text")
+  .attr("x", function(d) { 
+    return x(d.x0)+2; 
+  })
+  .attr("y", y.rangeBand()*.67)
+  // .attr("dy", "0.5em")
+  // .attr("dx", "0.5em")
+  .style("text-anchor", "begin")
+  .text(function(d) {
+    if (d.n !== 0 && d.pct > min_pct) {
+      return Math.round(d.pct) + "%"
+    }
+    else {
+      return("")
+    }
+  });
+
+qs.insert("rect",":first-child")
+  .attr("height", y.rangeBand())
+  .attr("x", "1")
+  .attr("width", width)
+  .attr("fill-opacity", "0")
+  .style("fill", "#F5F5F5")
+  .attr("class", function(d,index) { return index%2==0 ? "even" : "uneven"; });
+
+// Draw the vertical line through x = 0
+svg.append("g")
+  .attr("class", "y dbaraxis truezero")
+.append("line")
+  .attr("x1", x(0))
+  .attr("x2", x(0))
+  .attr("y2", height);
+
+var startp = svg.append("g").attr("class", "legendbox2_group1").attr("id", "mylegendbox");
+
+item_widths = categories.map(function(c) {return Math.max(100, Math.min((c.length * 6) + 28, 170))})
+legend_width = item_widths.reduce(function(a, b) {return a + b})
+
+if (legend_width > total_width) {
+  ratio = (total_width / legend_width)
+  item_widths = item_widths.map(function(i) {return Math.round(i * ratio)})
+  legend_width = item_widths.reduce(function(a, b) {return a + b})
+} else if ((2.5*legend_width < total_width)) {
+  item_widths = item_widths.map(function(i) {return i*2})
+  legend_width = item_widths.reduce(function(a, b) {return a + b})
+}
+
+legend_margin = Math.floor((total_width - legend_width) / 2)
+xpos = Math.min(-1*margin.left, 0) + legend_margin
+var legend_tabs = [];
+
+// q.forEach(function(qs) {questions.push(qs.Question);} );
+item_widths.forEach(function(w) {
+    legend_tabs.push(xpos)
+    xpos += w
+  }
+)
+
+var legend = startp.selectAll(".legend")
+  .data(color.domain().slice())
+.enter().append("g")
+  .attr("class", "legend")
+  .attr("transform", function(d, i) { return "translate(" + legend_tabs[i] + ",-40)"; });
+
+legend.append("rect")
+  .attr("x", 0)
+  .attr("width", 18)
+  .attr("height", 18)
+  .style("fill", color);
+
+legend.append("text")
+  .attr("x", 22)
+  .attr("y", 9)
+  .attr("dy", ".35em")
+  .style("text-anchor", "begin")
+  .text(function(d) { return d; });
+
+// svg.selectAll(".dbaraxis path")
+//   .style("fill", "none")
+//   .style("stroke", "#000")
+//   .style("shape-rendering", "crispEdges")
+
+// svg.selectAll(".dbaraxis line")
+//   .style("fill", "none")
+//   .style("stroke", "#000")
+//   .style("shape-rendering", "crispEdges")
+
+// Wrap and place legend text
+svg.selectAll(".legendbox2_group1 text")
+  .call(wrap, item_widths);
+
+svg.selectAll(".legend .wrapped_text")[0].map(
+  function(t) {
+    l = t.getAttribute("numlines");
+    var offset = (l-1)*-6
+    t.setAttribute("transform", "translate(20," + offset + ")");
+  }
+);
+
+var movesize = width/2 - startp.node().getBBox().width/2;
+movesize = 0;
+svg.selectAll(".legendbox2_group1").attr(
+    // uncomment to move legend to bottom
+    //"transform", "translate(" + movesize  + "," + (height + margin.top) + ")"
+    "transform", "translate(" + movesize  + ", 15)"
+);
+</script>
+
+  </div>
+<h3>Thinking about your entire undergraduate experience, how satisfied are you with each of the following?</h3>
+<div class="pagebreak">
+<div id="chart3_group1"></div>
+
+<script>
+
+var json = JSON.parse(document.getElementById('data3_group1').innerHTML);
+var categories = json['columns'];
+var numcat = categories.length;
+
+var questions = json['index'];
+var qct = questions.length;
+
+var data = json['data'];
+
+var max_label = d3.max(questions.map(function(q) {return((q.length*5)+20)}));
+var margin_left = Math.min(max_label, 300);
+
+var total_width = 745;
+var margin = {top: 40, right: 15, bottom: 20, left: margin_left},
+    width = total_width - margin.left - margin.right,
+    height = questions.length * 40;
+
+var y = d3.scale.ordinal()
+    .rangeRoundBands([0, height], .25);
+
+var x = d3.scale.linear()
+    .rangeRound([0, width]);
+
+// TODO: do a better job of this
+var colors = ["#FF9147", "#FFAA7A", "#cccccc", "#92c6db", "#086fad"]
+if (numcat == 4) {
+  colors = [colors[0], colors[1], colors[3], colors[4]];
+} else if (numcat == 3) {
+  colors = [colors[0], colors[2], colors[4]];
+} else if (numcat == 2) {
+  colors = [colors[1], colors[3]]
+}
+
+var color = d3.scale.ordinal()
+    .range(colors);
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left")
+
+var tip = d3.tip()
+  .attr('class', 'd3-tip')
+  .offset([0, 10])
+  .direction('e')
+  .html(function(d) {
+    return d.name + " " + Math.round(d.pct) + "% (n = " + d.n + ")";
+  })
+
+var svg = d3.select("#chart3_group1").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .attr("id", "d3-plot")
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+svg.call(tip)
+  
+color.domain(categories);
+
+var counter = 0;
+data.forEach(function(d) {
+  // calc percentages
+  var tot = d.reduce(function(i, j, index, array) {
+    return i + j;
+  });
+
+  categories.forEach(function(c, i) {
+      d[c + "_N"] = d[i];
+            if (tot == 0) {
+        d[c + "_pct"] = 0
+        d[c] = 0
+      }
+      else {
+        d[c + "_pct"] = (d[i]/tot) * 100
+        d[c] = (d[i]/tot) * 100
+      };
+  });
+
+  // x0 = left offset of box relative to 0
+  // x1 = right offset of box relative to 0
+  // N = total for this question
+  // n = total for this box
+  // pct = pct of total for this box
+  var x0 = 0;
+  
+  for (i = 0; i < Math.floor(2.5); i++) {
+      x0 += d[categories[i]]
+  };
+
+  if ((2.5 % 1) != 0) {
+      var ind = Math.floor(2.5)
+      var fraction = 2.5 % 1
+      x0 += (d[categories[ind]] * fraction)
+  };
+  if (x0 != 0) {x0 = -1 * x0;};
+  
+  var idx = -1;
+  d['i'] = counter;
+  counter += 1;
+  d.boxes = color.domain().map(function(cat) { 
+      return {name: cat, 
+              x0: x0, 
+              x1: x0 += d[cat], 
+              N: tot,
+              n: d[categories[idx += 1] + "_N"],
+              pct: d[categories[idx] + "_pct"]}; 
+  });
+});
+
+var min_val = d3.min(data, function(d) { return d.boxes[0].x0; });
+var max_val = d3.max(data, function(d) { return d.boxes[numcat-1].x1;});
+
+x.domain([min_val, max_val]).nice();
+y.domain(questions);
+
+svg.append("g")
+  .attr("class", "x dbaraxis")
+  .call(xAxis)
+  .attr("transform", "translate(0," + height + ")");
+
+svg.append("g")
+  .attr("class", "y dbaraxis")
+  .call(yAxis)
+.selectAll(".tick text")
+  .call(wrap, margin.left-10);
+
+svg.selectAll(".wrapped_text")[0].map(
+  function(t) {
+    l = t.getAttribute("numlines");
+    var offset = (l-1)*-6
+    t.setAttribute("transform", "translate(-10," + offset + ")");
+  }
+);
+
+var qs = svg.selectAll(".question3_group1")
+  .data(data)
+.enter().append("g")
+  .attr("class", "bar")
+  .attr("transform", 
+    function(d) { 
+        return "translate(0," + y(questions[d.i]) + ")"; 
+    }
+  );
+
+var bars = qs.selectAll("rect")
+  .data(function(d) { return d.boxes; })
+.enter().append("g").attr("class", "subbar");
+
+bars.append("rect")
+  .attr("height", y.rangeBand())
+  .attr("x", function(d) {
+    return x(d.x0); 
+  })
+  .attr("width", function(d) { return x(d.x1) - x(d.x0); })
+  .style("fill", function(d) { return color(d.name); })
+  .on('mouseover', tip.show)
+  .on('mouseout', tip.hide);
+
+// How big does n have to be to be less than 15 px?
+var min_pct = ((x.domain()[1]-x.domain()[0])*15)/width
+
+// Label each bar segment with the percentage
+bars.append("text")
+  .attr("x", function(d) { 
+    return x(d.x0)+2; 
+  })
+  .attr("y", y.rangeBand()*.67)
+  // .attr("dy", "0.5em")
+  // .attr("dx", "0.5em")
+  .style("text-anchor", "begin")
+  .text(function(d) {
+    if (d.n !== 0 && d.pct > min_pct) {
+      return Math.round(d.pct) + "%"
+    }
+    else {
+      return("")
+    }
+  });
+
+qs.insert("rect",":first-child")
+  .attr("height", y.rangeBand())
+  .attr("x", "1")
+  .attr("width", width)
+  .attr("fill-opacity", "0")
+  .style("fill", "#F5F5F5")
+  .attr("class", function(d,index) { return index%2==0 ? "even" : "uneven"; });
+
+// Draw the vertical line through x = 0
+svg.append("g")
+  .attr("class", "y dbaraxis truezero")
+.append("line")
+  .attr("x1", x(0))
+  .attr("x2", x(0))
+  .attr("y2", height);
+
+var startp = svg.append("g").attr("class", "legendbox3_group1").attr("id", "mylegendbox");
+
+item_widths = categories.map(function(c) {return Math.max(100, Math.min((c.length * 6) + 28, 170))})
+legend_width = item_widths.reduce(function(a, b) {return a + b})
+
+if (legend_width > total_width) {
+  ratio = (total_width / legend_width)
+  item_widths = item_widths.map(function(i) {return Math.round(i * ratio)})
+  legend_width = item_widths.reduce(function(a, b) {return a + b})
+} else if ((2.5*legend_width < total_width)) {
+  item_widths = item_widths.map(function(i) {return i*2})
+  legend_width = item_widths.reduce(function(a, b) {return a + b})
+}
+
+legend_margin = Math.floor((total_width - legend_width) / 2)
+xpos = Math.min(-1*margin.left, 0) + legend_margin
+var legend_tabs = [];
+
+// q.forEach(function(qs) {questions.push(qs.Question);} );
+item_widths.forEach(function(w) {
+    legend_tabs.push(xpos)
+    xpos += w
+  }
+)
+
+var legend = startp.selectAll(".legend")
+  .data(color.domain().slice())
+.enter().append("g")
+  .attr("class", "legend")
+  .attr("transform", function(d, i) { return "translate(" + legend_tabs[i] + ",-40)"; });
+
+legend.append("rect")
+  .attr("x", 0)
+  .attr("width", 18)
+  .attr("height", 18)
+  .style("fill", color);
+
+legend.append("text")
+  .attr("x", 22)
+  .attr("y", 9)
+  .attr("dy", ".35em")
+  .style("text-anchor", "begin")
+  .text(function(d) { return d; });
+
+// svg.selectAll(".dbaraxis path")
+//   .style("fill", "none")
+//   .style("stroke", "#000")
+//   .style("shape-rendering", "crispEdges")
+
+// svg.selectAll(".dbaraxis line")
+//   .style("fill", "none")
+//   .style("stroke", "#000")
+//   .style("shape-rendering", "crispEdges")
+
+// Wrap and place legend text
+svg.selectAll(".legendbox3_group1 text")
+  .call(wrap, item_widths);
+
+svg.selectAll(".legend .wrapped_text")[0].map(
+  function(t) {
+    l = t.getAttribute("numlines");
+    var offset = (l-1)*-6
+    t.setAttribute("transform", "translate(20," + offset + ")");
+  }
+);
+
+var movesize = width/2 - startp.node().getBBox().width/2;
+movesize = 0;
+svg.selectAll(".legendbox3_group1").attr(
+    // uncomment to move legend to bottom
+    //"transform", "translate(" + movesize  + "," + (height + margin.top) + ")"
+    "transform", "translate(" + movesize  + ", 15)"
+);
+</script>
+
+  </div>
+<h3>What do you expect to be doing this Fall? Mark all that apply.</h3>
+<div class="pagebreak">
+<svg class="chart4_group1"></svg>
+<script>
+var json = JSON.parse(document.getElementById('data4_group1').innerHTML);
+var num_data = json['data'];
+var labels = json['index'];
+var x = d3.scale.linear();   
+var y = d3.scale.ordinal();
+
+x.domain([0, d3.max(num_data.map(function(d) { return d[0]; }))]);
+y.domain(labels);
+
+
+var label_lengths = labels.map(function(d) {return (d.length * 5) + 20});
+var max_label = d3.max(label_lengths);
+var margin_left = Math.min(max_label, 300);
+
+var margin_bottom = 30;
+var total_height = (y.domain().length * 40) + margin_bottom;
+var total_width = 460 + margin_left;
+
+
+var margin = {top: 0, right: 15, bottom: 30, left: margin_left},
+    width = total_width - margin.left - margin.right,
+    height = total_height - margin.top - margin.bottom;
+x.range([0, width]);
+y.rangeRoundBands([0, height], .25);
+
+num_data.forEach(function(n, i) {
+    n["count"] = n[0];
+    n["pct"] = n[1];
+    n["label"] = labels[i];
+});
+
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left");
+
+var tip = d3.tip()
+  .attr('class', 'd3-tip')
+  .offset([0, 10])
+  .direction('e')
+  .html(function(d) {
+    return d.label + " (n = " + d.count + ")";
+  })
+
+var chart = d3.select(".chart4_group1")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+chart.call(tip)
+
+chart.append("g")
+    .attr("class", "y hbaraxis")
+    .call(yAxis)
+  .selectAll(".tick text")
+    .call(wrap, margin.left - 10);
+
+// .attr("transform", "translate(-10,0)")
+chart.selectAll(".wrapped_text")[0].map(
+  function(t) {
+    l = t.getAttribute("numlines");
+    var offset = (l-1)*-6
+    t.setAttribute("transform", "translate(-10," + offset + ")");
+  }
+);
+
+chart.append("g")
+    .attr("class", "x hbaraxis")
+    .attr("transform", "translate(0," + height + ")")
+    .call(xAxis);
+
+var bar = chart.selectAll(".hbar")
+    .data(num_data)
+  .enter()
+    .append("g")
+    .attr("class", "hbar")
+    .attr("transform", function(d, i) { 
+        return "translate(0," + y(d.label) + ")"; 
+    });
+
+bar.append("rect")
+    .attr("width", function(d) {
+        return x(d.count);
+    })
+    .attr("height", y.rangeBand())
+    .on('mouseover', tip.show)
+    .on('mouseout', tip.hide);
+
+bar.append("text")
+    .attr("x", function(d) {return(Math.max(0, x(d.count) - 25));})
+    .attr("y", function(d) { return y.rangeBand() * .67 ; })
+    .text(function(d) {return Math.round(d.pct*100) + "%"});
+
+</script></div>
+</div>
+</div>
+</body>
+</html>

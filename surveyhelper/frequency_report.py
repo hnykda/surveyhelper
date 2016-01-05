@@ -18,17 +18,17 @@ class FrequencyReport:
 
         self.template_dir = cfg['output']['template_dir']
         self.freq_template = cfg['output']['template_file']
-        self.report_file = cfg['output']['report_file']
         self.report_title = cfg['report_data']['title']
         self.response_set = response_set
 
     def create_report(self,
+                      report_file,
                       sort_by_mean=False,
                       mark_sig_diffs=False):
         env = Environment(loader=FileSystemLoader(self.template_dir),
                   extensions=['jinja2.ext.with_'])
         template = env.get_template(self.freq_template)
-        outfile = open(self.report_file, 'w+')
+        outfile = open(report_file, 'w+')
         
         matched_questions = self.response_set.matched_questions
         data_groups = self.response_set.get_data()
