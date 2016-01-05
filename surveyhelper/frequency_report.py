@@ -106,16 +106,17 @@ class FrequencyReport:
                     table = sub_q.cut_by_json(self.response_set, 
                                               sort_by_mean=sort_by_mean,
                                               mark_sig_diffs=mark_sig_diffs)
-                    text = "{} &mdash; {}".format(q.text, sub_q.text)
-                    questions.append((
-                        text,
-                        [table],
-                        [table],
-                        [''],
-                        q.graph_type(len(data_groups)),
-                        midpoint,
-                        22
-                    ))
+                    if table != '':
+                        text = "{} &mdash; {}".format(q.text, sub_q.text)
+                        questions.append((
+                            text,
+                            [table],
+                            [table],
+                            [''],
+                            q.graph_type(len(data_groups)),
+                            midpoint,
+                            22
+                        ))
             # If this is a matrix question with more than 7 answer choices, split it
             # into multiple questions
             elif (isinstance(q, SelectOneMatrixQuestion) and len(q.get_scale().choices) > 7):
@@ -124,17 +125,18 @@ class FrequencyReport:
                     table = s.cut_by_json(self.response_set, 
                                           sort_by_mean=sort_by_mean,
                                           mark_sig_diffs=mark_sig_diffs)
-                    group_names = [n for n, df in data_groups]
-                    text = "{} &mdash; {}".format(q.text, s.text)
-                    questions.append((
-                        text,
-                        [table],
-                        [table],
-                        group_names,
-                        s.graph_type(len(data_groups)),
-                        midpoint,
-                        barheight
-                    ))
+                    if table != '':
+                        group_names = [n for n, df in data_groups]
+                        text = "{} &mdash; {}".format(q.text, s.text)
+                        questions.append((
+                            text,
+                            [table],
+                            [table],
+                            group_names,
+                            s.graph_type(len(data_groups)),
+                            midpoint,
+                            barheight
+                        ))
             elif isinstance(q, SelectQuestion) and len(q.get_scale().choices) > 7:
                 group_names = []
                 json = []
@@ -145,15 +147,16 @@ class FrequencyReport:
                         group_names.append(name)
                         json.append(j)
                         tables.append(j)
-                questions.append((
-                                q.text,
-                                tables,
-                                json,
-                                group_names,
-                                q.graph_type(1),
-                                midpoint,
-                                22
-                ))
+                if len(tables) > 0:
+                    questions.append((
+                                    q.text,
+                                    tables,
+                                    json,
+                                    group_names,
+                                    q.graph_type(1),
+                                    midpoint,
+                                    22
+                    ))
             else:
                 freq_tables = []
                 freq_table_json = []
@@ -174,20 +177,22 @@ class FrequencyReport:
                     table = q.cut_by_json(self.response_set, 
                                           sort_by_mean=sort_by_mean,
                                           mark_sig_diffs=mark_sig_diffs)
-                    freq_tables.append(table)
-                    freq_table_json.append(table)
-                    group_names.append('')
+                    if table != '':
+                        freq_tables.append(table)
+                        freq_table_json.append(table)
+                        group_names.append('')
                     barheight = math.floor(min(800 / len(data_groups), 40))
 
-                questions.append((
-                                q.text,
-                                freq_tables,
-                                freq_table_json,
-                                group_names,
-                                q.graph_type(len(data_groups)),
-                                midpoint,
-                                barheight
-                                ))
+                if len(freq_table_json) > 0:
+                    questions.append((
+                                    q.text,
+                                    freq_tables,
+                                    freq_table_json,
+                                    group_names,
+                                    q.graph_type(len(data_groups)),
+                                    midpoint,
+                                    barheight
+                                    ))
         return(questions)
 
 

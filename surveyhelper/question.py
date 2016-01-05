@@ -229,6 +229,8 @@ class SelectOneMatrixQuestion(MatrixQuestion):
                                     "mean_format":"10",
                                     "show_values":False                         
                                    })
+            if t.empty:
+                return('')
             meancol = "Mean"
             suffix = ""
             if "Mean*" in t.columns:
@@ -478,6 +480,8 @@ class SelectOneQuestion(SelectQuestion):
         grouped = response_set.get_data()
         group_ct = len(grouped)
         t = self.cut_by(grouped, var, freq_table_options = freq_table_options)
+        if t.empty:
+            return('')
         meancol = "Mean"
         if meancol not in t.columns:
             meancol = "Mean*"
@@ -485,8 +489,8 @@ class SelectOneQuestion(SelectQuestion):
                 t.index=[i + "*" for i in t.index]
         if sort_by_mean:
             t[meancol] = t[meancol].astype(float)
-            t.sort([meancol], ascending=[0], inplace=True)
-        t.drop(meancol, axis=1, inplace=True)
+            t.sort_values([meancol], ascending=[0], inplace=True)
+        t = t.drop(meancol, axis=1)
         totals = t.sum(1).tolist()
         totals = [int(t) for t in totals]
         if self.graph_type(group_ct) == 'clustered_horizontal_bar':
@@ -852,6 +856,8 @@ class SelectMultipleQuestion(SelectQuestion):
         groupnames = groupby.groups.keys()
         obs_by_cut = []
         ct_by_cut = []
+        if sum(ct_by_cut) == 0:
+            return([False]*len(groupnames))
         for k, df in groupby:
             freqs, tot_resp, tot_nonresp = self.tally(df, remove_exclusions)
             obs_by_cut.append(freqs)
