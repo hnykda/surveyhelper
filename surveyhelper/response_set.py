@@ -24,7 +24,8 @@ class ResponseSet:
                 elif df[v].dtype not in [np.int64, np.float64]:
                     print("Converting variable {} to integer from {}".format(v, df[v].dtype))
                     df[v] = df[v].convert_objects(convert_numeric=True)
-            if matched: matched_questions.append(q)
+            if matched:
+                matched_questions.append(q)
         self.data = df
         self.matched_questions = matched_questions
         self.codebook = codebook

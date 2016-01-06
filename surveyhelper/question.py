@@ -98,13 +98,13 @@ class SelectOneMatrixQuestion(MatrixQuestion):
         else:
             return([])
 
-    def frequency_table(self, df, 
-                        show="ct", 
+    def frequency_table(self, df,
+                        show="ct",
                         pct_format=".0%",
-                        remove_exclusions = True, 
-                        show_totals=True, 
-                        remove_zero_totals=True, 
-                        show_mean=True, 
+                        remove_exclusions = True,
+                        show_totals=True,
+                        remove_zero_totals=True,
+                        show_mean=True,
                         mean_format=".1f"):
         if len(self.questions) == 0:
             return(pd.DataFrame())
@@ -114,24 +114,46 @@ class SelectOneMatrixQuestion(MatrixQuestion):
         questions_to_drop = {}
         if show == "ct":
             for q in self.questions:
-                f = q.frequency_table(df, False, True, False, pct_format, 
-                    remove_exclusions, show_totals, remove_zero_totals, 
-                    show_mean, mean_format
-                    ).iloc[:,0].tolist()
-                if len(f) > 0:
-                    data.append(f)
-                else:
+                f = q.frequency_table(df, 
+                                      show_question=False,
+                                      ct=True,
+                                      pct=False,
+                                      pct_format=pct_format,
+                                      remove_exclusions=remove_exclusions,
+                                      show_totals=show_totals,
+                                      remove_zero_totals=remove_zero_totals,
+                                      show_mean=show_mean,
+                                      mean_format=mean_format)
+                if f.empty:
                     questions_to_drop[q.text] = True
+                    continue
+                else:
+                    f = f.iloc[:,0].tolist()
+                    if len(f) > 0:
+                        data.append(f)
+                    else:
+                        questions_to_drop[q.text] = True
         elif show == "pct":
             for q in self.questions:
-                f = q.frequency_table(df, False, False, True, pct_format, 
-                    remove_exclusions, show_totals, remove_zero_totals, 
-                    show_mean, mean_format
-                    ).iloc[:,0].tolist()
-                if len(f) > 0:
-                    data.append(f)
-                else:
+                f = q.frequency_table(df, 
+                                      show_question=False,
+                                      ct=False,
+                                      pct=True,
+                                      pct_format=pct_format,
+                                      remove_exclusions=remove_exclusions,
+                                      show_totals=show_totals,
+                                      remove_zero_totals=remove_zero_totals,
+                                      show_mean=show_mean,
+                                      mean_format=mean_format)
+                if f.empty:
                     questions_to_drop[q.text] = True
+                    continue
+                else:
+                    f = f.iloc[:,0].tolist()
+                    if len(f) > 0:
+                        data.append(f)
+                    else:
+                        questions_to_drop[q.text] = True
         else:
             raise(Exception("Invalid 'show' parameter: {}".format(show)))
         tbl = pd.DataFrame(data)
@@ -151,13 +173,13 @@ class SelectOneMatrixQuestion(MatrixQuestion):
         tbl = tbl[cols]
         return(tbl)
 
-    def cut_by_question(self, other_question, response_set, 
+    def cut_by_question(self, other_question, response_set,
                         cut_var_label=None,
                         question_labels=None,
                         pct_format=".0%",
-                        remove_exclusions=True, 
+                        remove_exclusions=True,
                         remove_zero_totals=True,
-                        show_mean=True, 
+                        show_mean=True,
                         mean_format=".1f"):
         if type(other_question) != SelectOneQuestion:
             raise(Exception("Can only call cut_by_question on a SelectOneQuestion type"))
@@ -166,7 +188,7 @@ class SelectOneMatrixQuestion(MatrixQuestion):
         oth_text = cut_var_label
         if not oth_text:
             oth_text = other_question.text
-        return(self.cut_by(groups, group_mapping, oth_text, 
+        return(self.cut_by(groups, group_mapping, oth_text,
                            question_labels=question_labels,
                            pct_format=pct_format,
                            remove_exclusions=remove_exclusions,
@@ -174,11 +196,11 @@ class SelectOneMatrixQuestion(MatrixQuestion):
                            show_mean=show_mean, 
                            mean_format=mean_format))
 
-    def cut_by(self, groups, group_label_mapping, cut_var_label, 
-               question_labels=None, 
+    def cut_by(self, groups, group_label_mapping, cut_var_label,
+               question_labels=None,
                pct_format=".0%",
-               remove_exclusions=True, 
-               remove_zero_totals=True, 
+               remove_exclusions=True,
+               remove_zero_totals=True,
                show_mean=True,
                mean_format=".1f"):
         results = []
@@ -186,28 +208,38 @@ class SelectOneMatrixQuestion(MatrixQuestion):
         if not labels:
             labels = [q.text for q in self.questions]
         for q, l in zip(self.questions, labels):
-            r = q.cut_by(groups, cut_var_label, 
+            r = q.cut_by(groups, cut_var_label,
                          group_label_mapping = group_label_mapping,
                          freq_table_options={
-                            "ct":True, 
+                            "ct":True,
                             "pct":False,
-                            "pct_format": pct_format, 
-                            "remove_exclusions": remove_exclusions, 
+                            "pct_format": pct_format,
+                            "remove_exclusions": remove_exclusions,
                             "show_totals":False,
                             "remove_zero_totals": remove_zero_totals,
                             "show_mean": show_mean,
                             "mean_format": mean_format,
-                            "show_values":False                         
+                            "show_values":False
                          })
             results.append(r.T)
         return(pd.concat(results))
 
-    def freq_table_to_json(self, df):
-        t = self.frequency_table(df, "ct", "", True, False, False, "")
+    def freq_table_to_json(self, df, remove_zero_totals=True):
+        t = self.frequency_table(df, 
+                                 show="ct",
+                                 pct_format="",
+                                 remove_exclusions=True,
+                                 show_totals=True,
+                                 remove_zero_totals=False,
+                                 show_mean=False,
+                                 mean_format=".1f")
         # If all the entries in the table are zero, return empty string
         if t.ix[:,1:].sum().sum() == 0:
             return('')
         else:
+            if remove_zero_totals:
+                t = t[t['Total'] != 0]
+            t = t.drop('Total', axis=1)
             t.set_index('Question', inplace=True)
             t.columns = t.columns.astype(str)
             return(t.to_json(orient="split"))
@@ -217,20 +249,20 @@ class SelectOneMatrixQuestion(MatrixQuestion):
         data = rs.get_data()
         group_var = rs.grouping_var
         for q in self.questions:
-            t = q.cut_by(data, group_var, 
-                freq_table_options={"show_question":True, 
-                                    "ct":True, 
+            t = q.cut_by(data, group_var,
+                freq_table_options={"show_question":True,
+                                    "ct":True,
                                     "pct":False,
-                                    "pct_format":"", 
-                                    "remove_exclusions":True, 
+                                    "pct_format":"",
+                                    "remove_exclusions":True,
                                     "show_totals":False,
                                     "remove_zero_totals":True,
                                     "show_mean":True,
                                     "mean_format":"10",
-                                    "show_values":False                         
+                                    "show_values":False
                                    })
             if t.empty:
-                return('')
+                continue
             meancol = "Mean"
             suffix = ""
             if "Mean*" in t.columns:
@@ -238,6 +270,8 @@ class SelectOneMatrixQuestion(MatrixQuestion):
                 meancol = meancol + suffix
             if mark_sig_diffs:
                 t.index = [q.text + ":" + str(i) + suffix for i in t.index]
+            else:
+                t.index = [q.text + ":" + str(i) for i in t.index]
             t.drop(meancol, axis=1, inplace=True)
             if t.ix[:,1:-1].sum().sum() != 0:
                 tables.append(t)
@@ -272,10 +306,10 @@ class SelectMultipleMatrixQuestion(MatrixQuestion):
         else:
             []
 
-    def frequency_table(self, df, 
-                        show="ct", 
+    def frequency_table(self, df,
+                        show="ct",
                         pct_format=".0%",
-                        remove_exclusions = True, 
+                        remove_exclusions = True,
                         show_totals=True):
         data = []
         if show == "ct":
@@ -285,16 +319,16 @@ class SelectMultipleMatrixQuestion(MatrixQuestion):
                             False).iloc[:,0].tolist())
         elif show == "pct_respondents":
             for q in self.responses:
-                data.append(q.frequency_table(df, False, False, 
+                data.append(q.frequency_table(df, False, False,
                             True, False, pct_format, remove_exclusions,
                             False).iloc[:,0].tolist())
         elif show == "pct_responses":
             for q in self.responses:
-                data.append(q.frequency_table(df, False, False, 
+                data.append(q.frequency_table(df, False, False,
                             False, True, pct_format, remove_exclusions,
                             False).iloc[:,0].tolist())
         else:
-            raise(Exception("Invalid 'show' parameter: {}".format(show)))       
+            raise(Exception("Invalid 'show' parameter: {}".format(show)))
         tbl = pd.DataFrame(data)
 
         tbl.columns = self.get_choices(remove_exclusions)
@@ -623,7 +657,7 @@ class SelectOneQuestion(SelectQuestion):
                                  mean_format=".1f",
                                  show_values=False)
         if len(t) == 0:
-            return(None)
+            return('')
         t.columns = ["category", "count", "pct"]
         t.set_index('category', inplace=True)
         return(t.to_json(orient="split"))
@@ -755,6 +789,8 @@ class SelectMultipleQuestion(SelectQuestion):
         t = self.cut_by(grouped, var, freq_table_options = freq_table_options)
         totals = t[t.columns[-1]].tolist()
         totals = [int(i) for i in totals]
+        if sum(totals) == 0:
+            return('')
         r = t.iloc[:,:-1].T.to_json(orient="split")
         j = json.loads(r)
         j["totals"] = totals
@@ -872,8 +908,12 @@ class SelectMultipleQuestion(SelectQuestion):
             sigs.append(p < pval)
         return(sigs)
 
-    def freq_table_to_json(self, df):
+    def freq_table_to_json(self, df, remove_zero_totals=True):
         t = self.frequency_table(df, True, True, True, False, ".9f", True, False)
+        if remove_zero_totals:
+            t = t[t["Count"] != 0]
+        if t.empty:
+            return('')
         t.columns = ["category", "count", "pct"]
         t.set_index('category', inplace=True)
         return(t.to_json(orient="split"))

@@ -18,17 +18,17 @@ class FrequencyReport:
 
         self.template_dir = cfg['output']['template_dir']
         self.freq_template = cfg['output']['template_file']
+        self.report_file = cfg['output']['report_file']
         self.report_title = cfg['report_data']['title']
         self.response_set = response_set
 
     def create_report(self,
-                      report_file,
                       sort_by_mean=False,
                       mark_sig_diffs=False):
         env = Environment(loader=FileSystemLoader(self.template_dir),
                   extensions=['jinja2.ext.with_'])
         template = env.get_template(self.freq_template)
-        outfile = open(report_file, 'w+')
+        outfile = open(self.report_file, 'w+')
         
         matched_questions = self.response_set.matched_questions
         data_groups = self.response_set.get_data()
@@ -115,7 +115,7 @@ class FrequencyReport:
                             [''],
                             q.graph_type(len(data_groups)),
                             midpoint,
-                            22
+                            30
                         ))
             # If this is a matrix question with more than 7 answer choices, split it
             # into multiple questions
@@ -155,7 +155,7 @@ class FrequencyReport:
                                     group_names,
                                     q.graph_type(1),
                                     midpoint,
-                                    22
+                                    30
                     ))
             else:
                 freq_tables = []
@@ -183,7 +183,7 @@ class FrequencyReport:
                         group_names.append('')
                     barheight = math.floor(min(800 / len(data_groups), 40))
 
-                if len(freq_table_json) > 0:
+                if len(freq_tables) > 0:
                     questions.append((
                                     q.text,
                                     freq_tables,
