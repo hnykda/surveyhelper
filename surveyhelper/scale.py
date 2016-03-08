@@ -1,4 +1,5 @@
 from itertools import compress
+import numpy as np
 
 class QuestionScale():
 
@@ -134,4 +135,16 @@ class LikertScale(OrdinalScale):
         super().exclude_choices_from_analysis(choices)
         ct = len(self.exclude_from_analysis) - sum(self.exclude_from_analysis)
         self.midpoint = ct/2
+
+    def get_negative_mapping(self):
+        neg_map = {}
+        for val in self.values:
+            if val <= self.midpoint:
+                neg_map[val] = -1
+            elif val > np.ceil(self.midpoint):
+                neg_map[val] = 0
+            elif val > self.midpoint:
+                neg_map[val] = val - 1 - self.midpoint
+        return(neg_map)
+
 

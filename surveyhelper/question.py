@@ -86,6 +86,13 @@ class MatrixQuestion:
     def freq_table_to_json(self, df):
         return('')
 
+    def get_tableau_data(self, df, other_vars):
+        data = pd.DataFrame()
+        for q in self.questions:
+            data = data.append(q.get_tableau_data(df, other_vars), ignore_index=True)
+        return(data)
+
+
 class SelectOneMatrixQuestion(MatrixQuestion):
 
     def get_choices(self, 
@@ -670,6 +677,23 @@ class SelectOneQuestion(SelectQuestion):
         else:
             return('clustered_horizontal_bar')
 
+    def get_tableau_data(self, df, other_vars):
+        variables = other_vars + ['weight', self.variable]
+        data = df[variables]
+        data.columns = other_vars + ['weight', 'value']
+        data.ix[~data['value'].isin(self.scale.get_values()), 'value'] = np.nan
+        mapping = dict(zip(self.scale.get_values(), self.scale.get_choices()))
+        data['answer'] = data['value'].replace(mapping)
+        data['variable'] = self.variable
+        data['question'] = self.text
+
+        neg_map = self.scale.get_negative_mapping()
+        data['count_negative'] = data['value'].replace(neg_map)
+        data['count_negative'] = data['count_negative']  * data['weight']
+        return(data)
+        # Fill in numeric and text values
+        # Compute likert offset variables
+
 class SelectMultipleQuestion(SelectQuestion):
 
     def __init__(self, text, vars, choices, label, exclude_from_analysis,
@@ -923,3 +947,7 @@ class SelectMultipleQuestion(SelectQuestion):
             return('horizontal_bar')
         else:
             return('clustered_horizontal_bar')
+
+    def get_tableau_data(self, df, other_vars):
+        # placeholder
+        return(pd.DataFrame())

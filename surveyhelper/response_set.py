@@ -63,4 +63,13 @@ class ResponseSet:
         groups = self.data.groupby(group_var)
         return(groups)
 
-    
+    def export_to_tableau(self, output_file, other_vars = [], constants = {}):
+        df = pd.DataFrame()
+        if 'weight' not in self.data:
+            self.data['weight'] = 1
+        for q in self.matched_questions:
+            d = q.get_tableau_data(self.data, other_vars)
+            df = df.append(d, ignore_index=True)
+        for k, v in constants:
+            df[k] = v
+        df.to_csv(output_file, index=False)
