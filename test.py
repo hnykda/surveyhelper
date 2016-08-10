@@ -1,8 +1,11 @@
 import surveyhelper as sh
 
-p = sh.QsfParser("sample_input_files/Sample_Senior_Survey.qsf")
-c = p.create_codebook()
-
+survey = sh.QsfParser("data/CNBC_TV_and_Media_Study_-_USA.qsf")
+codebook = survey.create_codebook()
+codebook.pretty_print()
+for qid, qtype in codebook.questions.items():
+    print(qid, qtype)
+#import ipdb; ipdb.set_trace()
 # for label in ['Q1', 'Q2', 'Q3']:
 #     c.questions[label].exclude_choices_from_analysis(['Not applicable'])
 
@@ -17,6 +20,6 @@ c = p.create_codebook()
 #     q.text = re.sub(r'[0-9]\. ','', q.text)
 
 
-r = sh.ResponseSet("sample_input_files/Sample_Senior_Survey.csv", c)
-f = sh.FrequencyReport(r, 'sample_input_files/config.yml')
-f.create_report("output/d3/d3_frequency_report.html")
+#r = sh.ResponseSet("sample_input_files/Sample_Senior_Survey.csv", c)
+#f = sh.FrequencyReport(r, 'sample_input_files/config.yml')
+#f.create_report("output/d3/d3_frequency_report.html")

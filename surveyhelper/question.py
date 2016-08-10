@@ -308,7 +308,7 @@ class SelectMultipleMatrixQuestion(MatrixQuestion):
 
     def get_choices(self, remove_exclusions=True):
         self.assert_choices_same()
-        if len(self.questions > 0):
+        if len(self.questions) > 0:
             return(self.questions[0].get_choices(remove_exclusions))
         else:
             []
