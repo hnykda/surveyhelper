@@ -1,5 +1,6 @@
 output:
     template_dir: "templates/d3"
     template_file: "d3_frequency_report.html"
+    report_file: 'report_file.html'
 report_data:
     title: "Sample Senior Survey"
