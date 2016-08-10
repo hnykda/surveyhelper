@@ -338,8 +338,8 @@ class QsfParser:
         exclude = self._parse_analyze_choices(json)
 
         children = []
-        for k in json['AnswerOrder']:
-            text = self.get_proper_text(json['Answers'][str(k)])
+        for k in json['ChoiceOrder']:
+            text = self.get_proper_text(json['Choices'][str(k)])
             if 'ChoiceDataExportTags' in json and json['ChoiceDataExportTags']:
                 var = json['ChoiceDataExportTags'][str(k)]
             else:
@@ -347,4 +347,19 @@ class QsfParser:
             q = self.build_mr_question(text, var, json['Answers'],
                                        recode, var, True, exclude)
             children.append(q)
+        if 'DynamicChoiceJson' in json:
+            other_json = json['DynamicChoiceJson']
+            if other_json['ChoiceOrder'] == [] and 'DynamicChoiceJson' in other_json:
+                # CRAZY!
+                other_json = other_json['DynamicChoiceJson']
+            for choice_id in other_json['ChoiceOrder']:
+                text = self.get_proper_text(
+                    other_json['Choices'][str(choice_id)])
+                var = "{}_x{}".format(tag, choice_id)
+                q = self.build_mr_question(text, var, json['Answers'],
+                                           recode, var, True, exclude)
+                children.append(q)
+        if children == []:
+            raise ValueError('No children questions found for %s', tag)
+
         return (SelectMultipleMatrixQuestion(stem_text, tag, children))
